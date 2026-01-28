@@ -1,0 +1,23 @@
+name: Build Electron App
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest # Use appropriate OS (macos-latest, windows-latest) if needed
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24.x' # Or your desired version
+        cache: 'npm'
+    - name: Install dependencies
+      run: npm install
+    - name: Run build command
+      run: npm run build --if-present # Runs your package.json build script
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-build
+        path: dist # Change 'dist' to the output directory specified in your package.json/config

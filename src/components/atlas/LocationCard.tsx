@@ -31,6 +31,7 @@ interface LocationCardProps {
   onEdit: (location: Location) => void;
   onDelete: (location: Location) => void;
   onToggleFavorite: (location: Location) => void;
+  onClick?: (location: Location) => void;
 }
 
 const typeIcons: Record<string, typeof Globe> = {
@@ -85,16 +86,23 @@ export function LocationCard({
   onEdit,
   onDelete,
   onToggleFavorite,
+  onClick,
 }: LocationCardProps) {
   const [showMenu, setShowMenu] = useState(false);
 
   const TypeIcon = typeIcons[location.type || "poi"] || MapPin;
 
   return (
-    <div className="bg-panel border-subtle rounded-md p-5 relative group hover:border-teal-muted hover:bg-elevated transition-all duration-200">
+    <div
+      className="bg-panel border-subtle rounded-md p-5 relative group hover:border-teal-muted hover:bg-elevated transition-all duration-200 cursor-pointer"
+      onClick={() => onClick?.(location)}
+    >
       {/* Favorite button */}
       <button
-        onClick={() => onToggleFavorite(location)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleFavorite(location);
+        }}
         className="absolute top-3 left-3 p-1.5 text-text-muted hover:text-amber-bright transition-colors"
       >
         {location.isFavorite ? (
@@ -107,7 +115,10 @@ export function LocationCard({
       {/* Menu button */}
       <div className="absolute top-3 right-3">
         <button
-          onClick={() => setShowMenu(!showMenu)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowMenu(!showMenu);
+          }}
           className="p-1.5 text-text-muted hover:text-text-primary hover:bg-hull rounded opacity-0 group-hover:opacity-100 transition-all"
         >
           <MoreVertical className="w-4 h-4" />

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Ship, Plus } from 'lucide-react'
 import { Button, SearchInput } from '../components/ui'
-import { ShipCard, ShipModal } from '../components/fleet'
+import { ShipCard, ShipModal, ShipDetailModal } from '../components/fleet'
 import { useShips } from '../lib/db'
 import { shipsApi } from '../lib/db/api'
 import type { Ship as ShipType, CreateShipInput, UpdateShipInput, ShipCurrentLocation } from '../types/database'
@@ -13,6 +13,8 @@ export function FleetView() {
   const [searchQuery, setSearchQuery] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState<ShipType | null>(null)
   const [shipLocations, setShipLocations] = useState<Record<string, ShipCurrentLocation | null>>({})
+  const [detailShip, setDetailShip] = useState<ShipType | null>(null)
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
 
   // Fetch current locations for all ships
   useEffect(() => {
@@ -80,6 +82,19 @@ export function FleetView() {
     setIsModalOpen(true)
   }
 
+  const handleCardClick = (ship: ShipType) => {
+    setDetailShip(ship)
+    setIsDetailOpen(true)
+  }
+
+  const handleDetailEdit = () => {
+    if (detailShip) {
+      setIsDetailOpen(false)
+      setEditingShip(detailShip)
+      setIsModalOpen(true)
+    }
+  }
+
   const shipCount = ships?.length ?? 0
 
   return (
@@ -137,6 +152,7 @@ export function FleetView() {
                 currentLocation={shipLocations[ship.id]}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onClick={handleCardClick}
               />
             ))}
             {filteredShips.length === 0 && searchQuery && (
@@ -147,6 +163,17 @@ export function FleetView() {
           </div>
         )}
       </main>
+
+      <ShipDetailModal
+        isOpen={isDetailOpen}
+        onClose={() => {
+          setIsDetailOpen(false)
+          setDetailShip(null)
+        }}
+        onEdit={handleDetailEdit}
+        ship={detailShip}
+        currentLocation={detailShip ? shipLocations[detailShip.id] : null}
+      />
 
       <ShipModal
         isOpen={isModalOpen}

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Globe, Plus, List, GitBranch } from 'lucide-react'
 import { Button, SearchInput } from '../components/ui'
-import { LocationCard, LocationModal, LocationTree } from '../components/atlas'
+import { LocationCard, LocationModal, LocationTree, LocationDetailModal } from '../components/atlas'
 import { useLocations } from '../lib/db'
 import { locationsApi } from '../lib/db/api'
 import type { Location, CreateLocationInput, UpdateLocationInput, ShipAtLocation } from '../types/database'
@@ -17,6 +17,8 @@ export function AtlasView() {
   const [deleteConfirm, setDeleteConfirm] = useState<Location | null>(null)
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
   const [shipsAtLocations, setShipsAtLocations] = useState<Record<string, ShipAtLocation[]>>({})
+  const [detailLocation, setDetailLocation] = useState<Location | null>(null)
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
 
   // Fetch ships at each location
   useEffect(() => {
@@ -106,6 +108,19 @@ export function AtlasView() {
 
   const handleTreeSelect = (location: Location) => {
     setSelectedLocation(location)
+  }
+
+  const handleCardClick = (location: Location) => {
+    setDetailLocation(location)
+    setIsDetailOpen(true)
+  }
+
+  const handleDetailEdit = () => {
+    if (detailLocation) {
+      setIsDetailOpen(false)
+      setEditingLocation(detailLocation)
+      setIsModalOpen(true)
+    }
   }
 
   const locationCount = locations?.length ?? 0
@@ -236,6 +251,7 @@ export function AtlasView() {
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onToggleFavorite={handleToggleFavorite}
+                  onClick={handleCardClick}
                 />
               ))}
               {filteredLocations.length === 0 && searchQuery && (
@@ -247,6 +263,18 @@ export function AtlasView() {
           </div>
         )}
       </main>
+
+      <LocationDetailModal
+        isOpen={isDetailOpen}
+        onClose={() => {
+          setIsDetailOpen(false)
+          setDetailLocation(null)
+        }}
+        onEdit={handleDetailEdit}
+        location={detailLocation}
+        parentName={detailLocation ? parentNames[detailLocation.id] : undefined}
+        shipsAtLocation={detailLocation ? shipsAtLocations[detailLocation.id] : undefined}
+      />
 
       <LocationModal
         isOpen={isModalOpen}

@@ -7,9 +7,10 @@ interface ShipCardProps {
   currentLocation?: ShipCurrentLocation | null;
   onEdit: (ship: ShipType) => void;
   onDelete: (ship: ShipType) => void;
+  onClick?: (ship: ShipType) => void;
 }
 
-export function ShipCard({ ship, currentLocation, onEdit, onDelete }: ShipCardProps) {
+export function ShipCard({ ship, currentLocation, onEdit, onDelete, onClick }: ShipCardProps) {
   const [showMenu, setShowMenu] = useState(false);
 
   const formatDate = (date: Date | null) => {
@@ -27,11 +28,17 @@ export function ShipCard({ ship, currentLocation, onEdit, onDelete }: ShipCardPr
   };
 
   return (
-    <div className="bg-panel border-subtle rounded-md p-5 relative group hover:border-teal-muted hover:bg-elevated transition-all duration-200">
+    <div
+      className="bg-panel border-subtle rounded-md p-5 relative group hover:border-teal-muted hover:bg-elevated transition-all duration-200 cursor-pointer"
+      onClick={() => onClick?.(ship)}
+    >
       {/* Menu button */}
       <div className="absolute top-3 right-3">
         <button
-          onClick={() => setShowMenu(!showMenu)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowMenu(!showMenu);
+          }}
           className="p-1.5 text-text-muted hover:text-text-primary hover:bg-hull rounded opacity-0 group-hover:opacity-100 transition-all"
         >
           <MoreVertical className="w-4 h-4" />

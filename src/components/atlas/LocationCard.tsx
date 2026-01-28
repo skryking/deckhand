@@ -20,12 +20,14 @@ import {
   Factory,
   Skull,
   ExternalLink,
+  Ship,
 } from "lucide-react";
-import type { Location } from "../../types/database";
+import type { Location, ShipAtLocation } from "../../types/database";
 
 interface LocationCardProps {
   location: Location;
   parentName?: string;
+  shipsAtLocation?: ShipAtLocation[];
   onEdit: (location: Location) => void;
   onDelete: (location: Location) => void;
   onToggleFavorite: (location: Location) => void;
@@ -79,6 +81,7 @@ const typeLabels: Record<string, string> = {
 export function LocationCard({
   location,
   parentName,
+  shipsAtLocation,
   onEdit,
   onDelete,
   onToggleFavorite,
@@ -178,6 +181,18 @@ export function LocationCard({
               +{location.services.length - 3}
             </span>
           )}
+        </div>
+      )}
+
+      {/* Ships at location */}
+      {shipsAtLocation && shipsAtLocation.length > 0 && (
+        <div className="flex items-center gap-1.5 mb-3 text-xs text-text-muted">
+          <Ship className="w-3.5 h-3.5 text-teal-primary" />
+          <span>
+            {shipsAtLocation.length === 1
+              ? shipsAtLocation[0].shipName
+              : `${shipsAtLocation.length} ships`}
+          </span>
         </div>
       )}
 

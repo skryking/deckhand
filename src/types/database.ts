@@ -127,6 +127,32 @@ export interface Session {
 }
 
 // ============================================
+// LOCATION TRACKING TYPES
+// ============================================
+
+export interface ShipCurrentLocation {
+  locationId: string;
+  locationName: string;
+  timestamp: Date;
+}
+
+export interface ShipLocationHistoryEntry {
+  locationId: string;
+  locationName: string;
+  timestamp: Date;
+  entryId: string;
+  entryTitle: string | null;
+}
+
+export interface ShipAtLocation {
+  shipId: string;
+  shipName: string;
+  manufacturer: string;
+  model: string;
+  lastSeenTimestamp: Date;
+}
+
+// ============================================
 // INPUT TYPES (for create/update operations)
 // ============================================
 

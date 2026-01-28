@@ -1,14 +1,15 @@
-import { Ship, Calendar, Wallet, MoreVertical, Pencil, Trash2, ExternalLink } from "lucide-react";
+import { Ship, Calendar, Wallet, MoreVertical, Pencil, Trash2, ExternalLink, MapPin } from "lucide-react";
 import { useState } from "react";
-import type { Ship as ShipType } from "../../types/database";
+import type { Ship as ShipType, ShipCurrentLocation } from "../../types/database";
 
 interface ShipCardProps {
   ship: ShipType;
+  currentLocation?: ShipCurrentLocation | null;
   onEdit: (ship: ShipType) => void;
   onDelete: (ship: ShipType) => void;
 }
 
-export function ShipCard({ ship, onEdit, onDelete }: ShipCardProps) {
+export function ShipCard({ ship, currentLocation, onEdit, onDelete }: ShipCardProps) {
   const [showMenu, setShowMenu] = useState(false);
 
   const formatDate = (date: Date | null) => {
@@ -97,6 +98,11 @@ export function ShipCard({ ship, onEdit, onDelete }: ShipCardProps) {
 
       {/* Meta info */}
       <div className="flex flex-col gap-1.5 text-xs text-text-muted">
+        {/* Current location */}
+        <div className="flex items-center gap-1.5">
+          <MapPin className="w-3.5 h-3.5" />
+          <span>{currentLocation ? currentLocation.locationName : "Unknown"}</span>
+        </div>
         {ship.acquiredAt && (
           <div className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5" />

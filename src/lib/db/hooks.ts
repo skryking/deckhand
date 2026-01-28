@@ -76,6 +76,20 @@ export function useShipSearch(query: string) {
   );
 }
 
+export function useShipCurrentLocation(shipId: string | null) {
+  return useFetch(
+    () => (shipId ? shipsApi.getCurrentLocation(shipId) : Promise.resolve(null)),
+    [shipId]
+  );
+}
+
+export function useShipLocationHistory(shipId: string | null) {
+  return useFetch(
+    () => (shipId ? shipsApi.getLocationHistory(shipId) : Promise.resolve([])),
+    [shipId]
+  );
+}
+
 // ============================================
 // LOCATIONS HOOKS
 // ============================================
@@ -102,6 +116,13 @@ export function useLocationSearch(query: string) {
   return useFetch(
     () => (query ? locationsApi.search(query) : Promise.resolve([])),
     [query]
+  );
+}
+
+export function useShipsAtLocation(locationId: string | null) {
+  return useFetch(
+    () => (locationId ? locationsApi.getShipsAtLocation(locationId) : Promise.resolve([])),
+    [locationId]
   );
 }
 

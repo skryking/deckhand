@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { eq, like, or } from 'drizzle-orm';
+import { eq, like, or, and, isNotNull, desc } from 'drizzle-orm';
 import { getDatabase, schema } from '../index';
 import type { DbResponse } from '../../../src/types/database';
 
@@ -88,6 +88,63 @@ export function registerShipHandlers(): void {
       return { success: true, data: results };
     } catch (error) {
       console.error('[Ships] search error:', error);
+      return { success: false, error: String(error) };
+    }
+  });
+
+  // Get current location for a ship (most recent journal entry with both ship and location)
+  ipcMain.handle('db:ships:getCurrentLocation', async (_, shipId: string): Promise<DbResponse> => {
+    try {
+      const db = getDatabase();
+      const result = db
+        .select({
+          locationId: schema.journalEntries.locationId,
+          locationName: schema.locations.name,
+          timestamp: schema.journalEntries.timestamp,
+        })
+        .from(schema.journalEntries)
+        .innerJoin(schema.locations, eq(schema.journalEntries.locationId, schema.locations.id))
+        .where(
+          and(
+            eq(schema.journalEntries.shipId, shipId),
+            isNotNull(schema.journalEntries.locationId)
+          )
+        )
+        .orderBy(desc(schema.journalEntries.timestamp))
+        .limit(1)
+        .get();
+      return { success: true, data: result || null };
+    } catch (error) {
+      console.error('[Ships] getCurrentLocation error:', error);
+      return { success: false, error: String(error) };
+    }
+  });
+
+  // Get location history for a ship
+  ipcMain.handle('db:ships:getLocationHistory', async (_, shipId: string): Promise<DbResponse> => {
+    try {
+      const db = getDatabase();
+      const results = db
+        .select({
+          locationId: schema.journalEntries.locationId,
+          locationName: schema.locations.name,
+          timestamp: schema.journalEntries.timestamp,
+          entryId: schema.journalEntries.id,
+          entryTitle: schema.journalEntries.title,
+        })
+        .from(schema.journalEntries)
+        .innerJoin(schema.locations, eq(schema.journalEntries.locationId, schema.locations.id))
+        .where(
+          and(
+            eq(schema.journalEntries.shipId, shipId),
+            isNotNull(schema.journalEntries.locationId)
+          )
+        )
+        .orderBy(desc(schema.journalEntries.timestamp))
+        .all();
+      return { success: true, data: results };
+    } catch (error) {
+      console.error('[Ships] getLocationHistory error:', error);
       return { success: false, error: String(error) };
     }
   });

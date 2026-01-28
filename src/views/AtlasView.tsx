@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Globe, Plus, List, GitBranch } from 'lucide-react'
 import { Button, SearchInput } from '../components/ui'
 import { LocationCard, LocationModal, LocationTree } from '../components/atlas'
 import { useLocations } from '../lib/db'
 import { locationsApi } from '../lib/db/api'
-import type { Location, CreateLocationInput, UpdateLocationInput } from '../types/database'
+import type { Location, CreateLocationInput, UpdateLocationInput, ShipAtLocation } from '../types/database'
 
 type ViewMode = 'grid' | 'tree'
 
@@ -16,6 +16,28 @@ export function AtlasView() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [deleteConfirm, setDeleteConfirm] = useState<Location | null>(null)
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
+  const [shipsAtLocations, setShipsAtLocations] = useState<Record<string, ShipAtLocation[]>>({})
+
+  // Fetch ships at each location
+  useEffect(() => {
+    const fetchShipsAtLocations = async () => {
+      if (!locations || locations.length === 0) return
+
+      const shipsMap: Record<string, ShipAtLocation[]> = {}
+      await Promise.all(
+        locations.map(async (location) => {
+          try {
+            shipsMap[location.id] = await locationsApi.getShipsAtLocation(location.id)
+          } catch {
+            shipsMap[location.id] = []
+          }
+        })
+      )
+      setShipsAtLocations(shipsMap)
+    }
+
+    fetchShipsAtLocations()
+  }, [locations])
 
   const filteredLocations = useMemo(() => {
     if (!locations) return []
@@ -178,6 +200,7 @@ export function AtlasView() {
                   <LocationCard
                     location={selectedLocation}
                     parentName={parentNames[selectedLocation.id]}
+                    shipsAtLocation={shipsAtLocations[selectedLocation.id]}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onToggleFavorite={handleToggleFavorite}
@@ -209,6 +232,7 @@ export function AtlasView() {
                   key={location.id}
                   location={location}
                   parentName={parentNames[location.id]}
+                  shipsAtLocation={shipsAtLocations[location.id]}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onToggleFavorite={handleToggleFavorite}

@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { eq, like, or, isNull } from 'drizzle-orm';
+import { eq, like, or, isNull, and, isNotNull, desc } from 'drizzle-orm';
 import { getDatabase, schema } from '../index';
 import type { DbResponse } from '../../../src/types/database';
 
@@ -138,6 +138,53 @@ export function registerLocationHandlers(): void {
       return { success: true, data: result };
     } catch (error) {
       console.error('[Locations] incrementVisit error:', error);
+      return { success: false, error: String(error) };
+    }
+  });
+
+  // Get all ships currently at a location
+  ipcMain.handle('db:locations:getShipsAtLocation', async (_, locationId: string): Promise<DbResponse> => {
+    try {
+      const db = getDatabase();
+
+      // Get all ships
+      const allShips = db.select().from(schema.ships).all();
+
+      // For each ship, find its most recent journal entry with a location
+      const shipsAtLocation = [];
+
+      for (const ship of allShips) {
+        const latestEntry = db
+          .select({
+            locationId: schema.journalEntries.locationId,
+            timestamp: schema.journalEntries.timestamp,
+          })
+          .from(schema.journalEntries)
+          .where(
+            and(
+              eq(schema.journalEntries.shipId, ship.id),
+              isNotNull(schema.journalEntries.locationId)
+            )
+          )
+          .orderBy(desc(schema.journalEntries.timestamp))
+          .limit(1)
+          .get();
+
+        // If the ship's most recent location matches the queried location, include it
+        if (latestEntry && latestEntry.locationId === locationId) {
+          shipsAtLocation.push({
+            shipId: ship.id,
+            shipName: ship.nickname || `${ship.manufacturer} ${ship.model}`,
+            manufacturer: ship.manufacturer,
+            model: ship.model,
+            lastSeenTimestamp: latestEntry.timestamp,
+          });
+        }
+      }
+
+      return { success: true, data: shipsAtLocation };
+    } catch (error) {
+      console.error('[Locations] getShipsAtLocation error:', error);
       return { success: false, error: String(error) };
     }
   });

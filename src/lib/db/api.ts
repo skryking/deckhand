@@ -7,6 +7,9 @@ import type {
   Mission,
   Screenshot,
   Session,
+  ShipCurrentLocation,
+  ShipLocationHistoryEntry,
+  ShipAtLocation,
   CreateShipInput,
   UpdateShipInput,
   CreateLocationInput,
@@ -45,6 +48,8 @@ export const shipsApi = {
   update: (id: string, data: UpdateShipInput) => invoke<Ship>('db:ships:update', id, data),
   delete: (id: string) => invoke<void>('db:ships:delete', id),
   search: (query: string) => invoke<Ship[]>('db:ships:search', query),
+  getCurrentLocation: (shipId: string) => invoke<ShipCurrentLocation | null>('db:ships:getCurrentLocation', shipId),
+  getLocationHistory: (shipId: string) => invoke<ShipLocationHistoryEntry[]>('db:ships:getLocationHistory', shipId),
 };
 
 // ============================================
@@ -60,6 +65,7 @@ export const locationsApi = {
   delete: (id: string) => invoke<void>('db:locations:delete', id),
   search: (query: string) => invoke<Location[]>('db:locations:search', query),
   incrementVisit: (id: string) => invoke<Location>('db:locations:incrementVisit', id),
+  getShipsAtLocation: (locationId: string) => invoke<ShipAtLocation[]>('db:locations:getShipsAtLocation', locationId),
 };
 
 // ============================================

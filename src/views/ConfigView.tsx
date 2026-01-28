@@ -48,7 +48,7 @@ export function ConfigView() {
       } else if (result.error !== 'Export cancelled') {
         showMessage('error', result.error || 'Export failed')
       }
-    } catch (error) {
+    } catch {
       showMessage('error', 'Export failed')
     } finally {
       setLoading(null)
@@ -66,7 +66,7 @@ export function ConfigView() {
       } else if (result.error !== 'Import cancelled') {
         showMessage('error', result.error || 'Import failed')
       }
-    } catch (error) {
+    } catch {
       showMessage('error', 'Import failed')
     } finally {
       setLoading(null)
@@ -85,7 +85,7 @@ export function ConfigView() {
       } else {
         showMessage('error', result.error || 'Clear failed')
       }
-    } catch (error) {
+    } catch {
       showMessage('error', 'Clear failed')
     } finally {
       setLoading(null)

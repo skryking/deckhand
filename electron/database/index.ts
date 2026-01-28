@@ -35,7 +35,7 @@ export function initializeDatabase(): BetterSQLite3Database<typeof schema> {
   sqlite.pragma('foreign_keys = ON');
 
   // Create Drizzle instance with schema
-  db = drizzle(sqlite, { schema });
+  db = drizzle({ client: sqlite, schema });
 
   // Create tables if they don't exist (simple migration for now)
   createTables(sqlite);

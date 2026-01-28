@@ -81,7 +81,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
 
 Modal.displayName = "Modal";
 
-interface ModalFooterProps extends HTMLAttributes<HTMLDivElement> {}
+type ModalFooterProps = HTMLAttributes<HTMLDivElement>;
 
 export const ModalFooter = forwardRef<HTMLDivElement, ModalFooterProps>(
   ({ children, className = "", ...props }, ref) => {

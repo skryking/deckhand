@@ -1,0 +1,209 @@
+/* Google Fonts - must come before Tailwind */
+@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@import "tailwindcss";
+
+/* ===== DECKHAND DESIGN SYSTEM ===== */
+@theme {
+  /* === Foundation (Warm Space Black) === */
+  --color-void: #08090c;
+  --color-hull: #0f1318;
+  --color-panel: #161c24;
+  --color-elevated: #1e262f;
+  --color-hover: #2a3441;
+
+  /* === Primary Accent: Warm Teal === */
+  --color-teal-bright: #2dd4bf;
+  --color-teal-primary: #14b8a6;
+  --color-teal-muted: #0d9488;
+  --color-teal-dark: #134e4a;
+
+  /* === Secondary Accent: Amber === */
+  --color-amber-bright: #fbbf24;
+  --color-amber-primary: #f59e0b;
+  --color-amber-muted: #d97706;
+
+  /* === Text Hierarchy === */
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-text-faint: #475569;
+
+  /* === Status Colors === */
+  --color-success: #22c55e;
+  --color-warning: #eab308;
+  --color-danger: #ef4444;
+  --color-info: #3b82f6;
+
+  /* === Typography === */
+  --font-display: 'Oxanium', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* === Spacing === */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}
+
+/* ===== BASE STYLES ===== */
+/* Note: Tailwind v4 includes preflight reset automatically */
+
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-void);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Subtle grid pattern background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    linear-gradient(rgba(45, 212, 191, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 212, 191, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== CUSTOM UTILITIES ===== */
+@utility font-display {
+  font-family: var(--font-display);
+}
+
+@utility font-body {
+  font-family: var(--font-body);
+}
+
+@utility font-mono {
+  font-family: var(--font-mono);
+}
+
+@utility tracking-display {
+  letter-spacing: 0.08em;
+}
+
+@utility tracking-label {
+  letter-spacing: 0.12em;
+}
+
+@utility tracking-wide {
+  letter-spacing: 0.15em;
+}
+
+/* Glow effects */
+@utility glow-teal {
+  box-shadow: 0 0 20px rgba(45, 212, 191, 0.4);
+}
+
+@utility glow-amber {
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+}
+
+/* Border utilities */
+@utility border-subtle {
+  border: 1px solid rgba(45, 212, 191, 0.15);
+}
+
+@utility border-active {
+  border: 1px solid rgba(45, 212, 191, 0.4);
+}
+
+/* Beveled button clip-path */
+@utility clip-bevel {
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+/* Custom scrollbar */
+@utility scrollbar-deckhand {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-teal-dark) var(--color-hull);
+}
+
+.scrollbar-deckhand::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-deckhand::-webkit-scrollbar-track {
+  background: var(--color-hull);
+}
+
+.scrollbar-deckhand::-webkit-scrollbar-thumb {
+  background: var(--color-teal-dark);
+  border-radius: 3px;
+}
+
+.scrollbar-deckhand::-webkit-scrollbar-thumb:hover {
+  background: var(--color-teal-muted);
+}
+
+/* Title bar drag region */
+@utility app-drag {
+  -webkit-app-region: drag;
+}
+
+@utility app-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Entry card left accent bar */
+.entry-card-accent::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 16px;
+  bottom: 16px;
+  width: 3px;
+  background: var(--color-teal-dark);
+  border-radius: 0 2px 2px 0;
+  transition: all 0.2s;
+}
+
+.entry-card-accent:hover::before {
+  background: var(--color-teal-bright);
+  box-shadow: 0 0 20px rgba(45, 212, 191, 0.4);
+}
+
+/* Stat card top accent stripe */
+.stat-card-stripe::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-teal-bright), var(--color-teal-muted));
+}
+
+.stat-card-stripe.amber::before {
+  background: linear-gradient(90deg, var(--color-amber-bright), var(--color-amber-muted));
+}
+
+/* Status indicator pulse animation */
+@keyframes pulse-indicator {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.status-pulse {
+  animation: pulse-indicator 2s ease-in-out infinite;
+}

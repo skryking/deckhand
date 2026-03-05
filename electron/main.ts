@@ -263,6 +263,28 @@ ipcMain.handle('data:getPath', () => {
   return { success: true, path: getDbPath() }
 })
 
+// Select screenshot files for import
+ipcMain.handle('screenshots:selectFiles', async () => {
+  try {
+    const result = await dialog.showOpenDialog(win!, {
+      title: 'Import Screenshots',
+      filters: [
+        { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif'] },
+      ],
+      properties: ['openFile', 'multiSelections'],
+    })
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return { success: false, error: 'Import cancelled' }
+    }
+
+    return { success: true, filePaths: result.filePaths }
+  } catch (error) {
+    console.error('[Screenshots] selectFiles error:', error)
+    return { success: false, error: String(error) }
+  }
+})
+
 app.whenReady().then(() => {
   // Initialize database before creating window
   try {

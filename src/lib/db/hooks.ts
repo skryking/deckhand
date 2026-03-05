@@ -262,6 +262,20 @@ export function useScreenshotsByLocation(locationId: string) {
   );
 }
 
+export function useScreenshotsByShip(shipId: string | null) {
+  return useFetch(
+    () => (shipId ? screenshotsApi.findByShip(shipId) : Promise.resolve([])),
+    [shipId]
+  );
+}
+
+export function useScreenshotsByJournalEntry(journalEntryId: string | null) {
+  return useFetch(
+    () => (journalEntryId ? screenshotsApi.findByJournalEntry(journalEntryId) : Promise.resolve([])),
+    [journalEntryId]
+  );
+}
+
 // ============================================
 // SESSIONS HOOKS
 // ============================================

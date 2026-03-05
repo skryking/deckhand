@@ -18,7 +18,8 @@ import {
   Ship,
   Pencil,
 } from "lucide-react";
-import { Modal, ModalFooter, Button } from "../ui";
+import { Modal, ModalFooter, Button, LinkedScreenshots } from "../ui";
+import { useScreenshotsByLocation } from "../../lib/db";
 import type { Location, ShipAtLocation } from "../../types/database";
 
 interface LocationDetailModalProps {
@@ -78,6 +79,8 @@ export function LocationDetailModal({
   parentName,
   shipsAtLocation,
 }: LocationDetailModalProps) {
+  const { data: linkedScreenshots, refetch: refetchScreenshots } = useScreenshotsByLocation(location?.id ?? '');
+
   if (!location) return null;
 
   const TypeIcon = typeIcons[location.type || "poi"] || MapPin;
@@ -246,6 +249,15 @@ export function LocationDetailModal({
           </div>
         </div>
       )}
+
+      {/* Screenshots */}
+      <div className="mb-4">
+        <LinkedScreenshots
+          screenshots={linkedScreenshots || []}
+          onImport={() => refetchScreenshots()}
+          linkData={{ locationId: location.id }}
+        />
+      </div>
 
       <ModalFooter>
         <Button variant="ghost" onClick={onClose}>

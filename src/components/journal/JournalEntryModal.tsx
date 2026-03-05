@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Modal, ModalFooter, Button, Input, Textarea, Select } from "../ui";
+import { Modal, ModalFooter, Button, Input, Textarea, Select, LinkedScreenshots } from "../ui";
+import { useScreenshotsByJournalEntry } from "../../lib/db";
 import type {
   JournalEntry,
   CreateJournalEntryInput,
@@ -42,6 +43,7 @@ export function JournalEntryModal({
   ships,
   locations,
 }: JournalEntryModalProps) {
+  const { data: linkedScreenshots, refetch: refetchScreenshots } = useScreenshotsByJournalEntry(entry?.id ?? null);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -214,6 +216,15 @@ export function JournalEntryModal({
               placeholder="Comma-separated tags (e.g., trading, exploration, milestone)"
             />
           </div>
+
+          {/* Screenshots (only when editing existing entry) */}
+          {entry && (
+            <LinkedScreenshots
+              screenshots={linkedScreenshots || []}
+              onImport={() => refetchScreenshots()}
+              linkData={{ journalEntryId: entry.id }}
+            />
+          )}
 
           {/* Favorite toggle */}
           <div className="flex items-center gap-3">

@@ -7,7 +7,8 @@ import {
   Pencil,
   Tag,
 } from "lucide-react";
-import { Modal, ModalFooter, Button } from "../ui";
+import { Modal, ModalFooter, Button, LinkedScreenshots } from "../ui";
+import { useScreenshotsByShip } from "../../lib/db";
 import type { Ship as ShipType, ShipCurrentLocation } from "../../types/database";
 
 interface ShipDetailModalProps {
@@ -25,6 +26,8 @@ export function ShipDetailModal({
   ship,
   currentLocation,
 }: ShipDetailModalProps) {
+  const { data: linkedScreenshots, refetch: refetchScreenshots } = useScreenshotsByShip(ship?.id ?? null);
+
   if (!ship) return null;
 
   const formatDate = (date: Date | null) => {
@@ -169,6 +172,15 @@ export function ShipDetailModal({
           </div>
         </div>
       )}
+
+      {/* Screenshots */}
+      <div className="mb-4">
+        <LinkedScreenshots
+          screenshots={linkedScreenshots || []}
+          onImport={() => refetchScreenshots()}
+          linkData={{ shipId: ship.id }}
+        />
+      </div>
 
       <ModalFooter>
         <Button variant="ghost" onClick={onClose}>

@@ -71,6 +71,40 @@ export function registerScreenshotHandlers(): void {
     }
   });
 
+  // Get screenshots by ship
+  ipcMain.handle('db:screenshots:findByShip', async (_, shipId: string): Promise<DbResponse> => {
+    try {
+      const db = getDatabase();
+      const results = db
+        .select()
+        .from(schema.screenshots)
+        .where(eq(schema.screenshots.shipId, shipId))
+        .orderBy(desc(schema.screenshots.takenAt))
+        .all();
+      return { success: true, data: results };
+    } catch (error) {
+      console.error('[Screenshots] findByShip error:', error);
+      return { success: false, error: String(error) };
+    }
+  });
+
+  // Get screenshots by journal entry
+  ipcMain.handle('db:screenshots:findByJournalEntry', async (_, journalEntryId: string): Promise<DbResponse> => {
+    try {
+      const db = getDatabase();
+      const results = db
+        .select()
+        .from(schema.screenshots)
+        .where(eq(schema.screenshots.journalEntryId, journalEntryId))
+        .orderBy(desc(schema.screenshots.takenAt))
+        .all();
+      return { success: true, data: results };
+    } catch (error) {
+      console.error('[Screenshots] findByJournalEntry error:', error);
+      return { success: false, error: String(error) };
+    }
+  });
+
   // Create screenshot
   ipcMain.handle('db:screenshots:create', async (_, data: typeof schema.screenshots.$inferInsert): Promise<DbResponse> => {
     try {

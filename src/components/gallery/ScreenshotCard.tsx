@@ -33,7 +33,7 @@ export function ScreenshotCard({
       {/* Thumbnail */}
       <div className="aspect-video bg-void relative overflow-hidden">
         <img
-          src={`local-file://${screenshot.filePath}`}
+          src={`local-file:///${screenshot.filePath.replace(/\\/g, '/')}`}
           alt={screenshot.caption || "Screenshot"}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           onError={(e) => {

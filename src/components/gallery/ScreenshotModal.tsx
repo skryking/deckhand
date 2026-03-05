@@ -125,7 +125,7 @@ export function ScreenshotModal({
             {formData.filePath && (
               <div className="aspect-video max-h-48 bg-void rounded overflow-hidden">
                 <img
-                  src={`local-file://${formData.filePath}`}
+                  src={`local-file:///${formData.filePath.replace(/\\/g, '/')}`}
                   alt="Preview"
                   className="w-full h-full object-contain"
                   onError={(e) => {

@@ -1,5 +1,5 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
-import { fileURLToPath } from 'node:url'
+import { app, BrowserWindow, ipcMain, dialog, shell, protocol, net } from 'electron'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import path from 'node:path'
 import fs from 'node:fs'
 import { initializeDatabase, closeDatabase, getDbPath, getDatabase } from './database'
@@ -25,6 +25,11 @@ export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
+
+// Register custom protocol for loading local image files in the renderer
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'local-file', privileges: { bypassCSP: true, stream: true, supportFetchAPI: true } },
+])
 
 let win: BrowserWindow | null
 
@@ -286,6 +291,14 @@ ipcMain.handle('screenshots:selectFiles', async () => {
 })
 
 app.whenReady().then(() => {
+  // Handle local-file:// protocol for loading images from disk
+  protocol.handle('local-file', (request) => {
+    // request.url: "local-file:///C:/Users/path/to/file.png"
+    // Swap scheme to file:// so net.fetch can load it directly
+    const fileUrl = request.url.replace('local-file:', 'file:')
+    return net.fetch(fileUrl)
+  })
+
   // Initialize database before creating window
   try {
     initializeDatabase()

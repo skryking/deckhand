@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog, shell, protocol, net } from 'elect
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import fs from 'node:fs'
+import { eq } from 'drizzle-orm'
 import { initializeDatabase, closeDatabase, getDbPath, getDatabase } from './database'
 import { registerDatabaseHandlers } from './database/handlers'
 import { schema } from './database'
@@ -268,7 +269,52 @@ ipcMain.handle('data:getPath', () => {
   return { success: true, path: getDbPath() }
 })
 
-// Select screenshot files for import
+// Get screenshots storage directory
+function getScreenshotsDir(): string {
+  const dir = path.join(app.getPath('userData'), 'screenshots')
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true })
+  }
+  return dir
+}
+
+// Migrate existing screenshots from external paths into the app data directory
+function migrateScreenshotsToAppData(): void {
+  try {
+    const db = getDatabase()
+    const screenshotsDir = getScreenshotsDir()
+    const allScreenshots = db.select().from(schema.screenshots).all()
+
+    let migrated = 0
+    for (const screenshot of allScreenshots) {
+      const resolved = path.resolve(screenshot.filePath)
+      // Skip if already in the screenshots directory
+      if (resolved.startsWith(screenshotsDir)) continue
+
+      if (fs.existsSync(resolved)) {
+        const ext = path.extname(resolved)
+        const uniqueName = `${crypto.randomUUID()}${ext}`
+        const destPath = path.join(screenshotsDir, uniqueName)
+        fs.copyFileSync(resolved, destPath)
+        db.update(schema.screenshots)
+          .set({ filePath: destPath })
+          .where(eq(schema.screenshots.id, screenshot.id))
+          .run()
+        migrated++
+      } else {
+        console.warn(`[Screenshots] Migration: source file missing, skipping: ${resolved}`)
+      }
+    }
+
+    if (migrated > 0) {
+      console.log(`[Screenshots] Migrated ${migrated} screenshot(s) into app data directory`)
+    }
+  } catch (error) {
+    console.error('[Screenshots] Migration error:', error)
+  }
+}
+
+// Select screenshot files for import (copies files into app data directory)
 ipcMain.handle('screenshots:selectFiles', async () => {
   try {
     const result = await dialog.showOpenDialog(win!, {
@@ -283,9 +329,49 @@ ipcMain.handle('screenshots:selectFiles', async () => {
       return { success: false, error: 'Import cancelled' }
     }
 
-    return { success: true, filePaths: result.filePaths }
+    const screenshotsDir = getScreenshotsDir()
+    const copiedPaths: string[] = []
+
+    for (const srcPath of result.filePaths) {
+      const ext = path.extname(srcPath)
+      const uniqueName = `${crypto.randomUUID()}${ext}`
+      const destPath = path.join(screenshotsDir, uniqueName)
+      fs.copyFileSync(srcPath, destPath)
+      copiedPaths.push(destPath)
+    }
+
+    return { success: true, filePaths: copiedPaths }
   } catch (error) {
     console.error('[Screenshots] selectFiles error:', error)
+    return { success: false, error: String(error) }
+  }
+})
+
+// Open the containing folder for a screenshot file
+ipcMain.handle('screenshots:openFolder', async (_, filePath: string) => {
+  try {
+    shell.showItemInFolder(path.resolve(filePath))
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: String(error) }
+  }
+})
+
+// Delete screenshot file from app data directory
+ipcMain.handle('screenshots:deleteFile', async (_, filePath: string) => {
+  try {
+    const screenshotsDir = getScreenshotsDir()
+    // Only allow deleting files within the screenshots directory
+    const resolved = path.resolve(filePath)
+    if (!resolved.startsWith(screenshotsDir)) {
+      return { success: false, error: 'Cannot delete files outside screenshots directory' }
+    }
+    if (fs.existsSync(resolved)) {
+      fs.unlinkSync(resolved)
+    }
+    return { success: true }
+  } catch (error) {
+    console.error('[Screenshots] deleteFile error:', error)
     return { success: false, error: String(error) }
   }
 })
@@ -303,6 +389,7 @@ app.whenReady().then(() => {
   try {
     initializeDatabase()
     registerDatabaseHandlers()
+    migrateScreenshotsToAppData()
     console.log('[Main] Database ready')
   } catch (error) {
     console.error('[Main] Database initialization failed:', error)

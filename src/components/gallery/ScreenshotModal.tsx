@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { FolderOpen } from "lucide-react";
 import { Modal, ModalFooter, Button, Input, Textarea, Select } from "../ui";
 import type {
   Screenshot,
@@ -114,14 +115,30 @@ export function ScreenshotModal({
             <label className="font-display text-[10px] font-medium tracking-label uppercase text-text-muted">
               File Path
             </label>
-            <Input
-              value={formData.filePath}
-              onChange={(e) =>
-                setFormData({ ...formData, filePath: e.target.value })
-              }
-              placeholder="Path to screenshot..."
-              disabled={!!screenshot}
-            />
+            <div className="flex gap-2 items-center">
+              <div className="flex-1 min-w-0">
+                <Input
+                  value={formData.filePath}
+                  onChange={(e) =>
+                    setFormData({ ...formData, filePath: e.target.value })
+                  }
+                  placeholder="Path to screenshot..."
+                  disabled={!!screenshot}
+                  className="w-full"
+                />
+              </div>
+              {screenshot && formData.filePath && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => window.ipcRenderer.invoke('screenshots:openFolder', formData.filePath)}
+                  title="Open containing folder"
+                  className="shrink-0"
+                >
+                  <FolderOpen className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
             {formData.filePath && (
               <div className="aspect-video max-h-48 bg-void rounded overflow-hidden">
                 <img

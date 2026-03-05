@@ -8,7 +8,9 @@
       "Bash(npm view:*)",
       "Bash(npx tsc --noEmit)",
       "Bash(npx drizzle-kit:*)",
-      "Bash(npm audit:*)"
+      "Bash(npm audit:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }

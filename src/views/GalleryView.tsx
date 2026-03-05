@@ -125,6 +125,8 @@ export function GalleryView() {
 
   const confirmDelete = async () => {
     if (deleteConfirm) {
+      // Delete the copied file from the app data directory
+      await window.ipcRenderer.invoke('screenshots:deleteFile', deleteConfirm.filePath)
       await screenshotsApi.delete(deleteConfirm.id)
       setDeleteConfirm(null)
       refetch()

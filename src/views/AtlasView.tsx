@@ -43,7 +43,7 @@ export function AtlasView() {
 
   const filteredLocations = useMemo(() => {
     if (!locations) return []
-    if (!searchQuery.trim()) return locations
+    if (!searchQuery.trim()) return [...locations].sort((a, b) => a.name.localeCompare(b.name))
 
     const query = searchQuery.toLowerCase()
     return locations.filter(
@@ -51,7 +51,7 @@ export function AtlasView() {
         loc.name.toLowerCase().includes(query) ||
         loc.type?.toLowerCase().includes(query) ||
         loc.notes?.toLowerCase().includes(query)
-    )
+    ).sort((a, b) => a.name.localeCompare(b.name))
   }, [locations, searchQuery])
 
   // Build a map of location IDs to parent names for display

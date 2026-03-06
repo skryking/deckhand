@@ -41,7 +41,10 @@ export function FleetView() {
 
   const filteredShips = useMemo(() => {
     if (!ships) return []
-    if (!searchQuery.trim()) return ships
+    const sortShips = (a: ShipType, b: ShipType) =>
+      a.manufacturer.localeCompare(b.manufacturer) || a.model.localeCompare(b.model)
+
+    if (!searchQuery.trim()) return [...ships].sort(sortShips)
 
     const query = searchQuery.toLowerCase()
     return ships.filter(
@@ -50,7 +53,7 @@ export function FleetView() {
         ship.model.toLowerCase().includes(query) ||
         ship.nickname?.toLowerCase().includes(query) ||
         ship.role?.toLowerCase().includes(query)
-    )
+    ).sort(sortShips)
   }, [ships, searchQuery])
 
   const handleSave = async (data: CreateShipInput | UpdateShipInput) => {

@@ -210,7 +210,7 @@ export function ConfigView() {
                 </div>
                 <div>
                   <h3 className="font-display text-lg font-semibold text-text-primary">Deckhand</h3>
-                  <p className="text-text-muted text-xs">Version 0.3.1</p>
+                  <p className="text-text-muted text-xs">Version 0.4.0</p>
                   <p className="text-text-secondary text-sm mt-2">
                     A personal logbook for Star Citizen pilots.
                   </p>

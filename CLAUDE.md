@@ -23,15 +23,18 @@ npm run db:studio    # Open Drizzle Studio UI for database inspection
 ### Process Separation
 
 **Main Process** (`electron/`):
-- `main.ts` - Window management, IPC handler registration, app lifecycle
+- `main.ts` - Window management, IPC handler registration, app lifecycle, data export/import, screenshot file management, custom `local-file://` protocol
+- `preload.ts` - Context bridge exposing IPC invoke to renderer
+- `database/index.ts` - Database initialization, connection management, WAL mode
 - `database/schema.ts` - Drizzle ORM schema (source of truth for types)
-- `database/handlers/` - IPC handlers per entity (ships, locations, journal, etc.)
+- `database/handlers/` - IPC handlers per entity (ships, locations, journal, transactions, cargo, missions, screenshots, sessions)
 
 **Renderer Process** (`src/`):
-- React app with Zustand for navigation state only
-- `lib/db/api.ts` - Typed IPC invoke wrappers
+- React app with Zustand for navigation state and balance refresh triggers
+- `lib/db/api.ts` - Typed IPC invoke wrappers (8 API modules: ships, locations, journal, transactions, cargo, missions, screenshots, sessions)
 - `lib/db/hooks.ts` - Data fetching hooks with loading/error/refetch
-- `views/` - Page components (one per feature)
+- `views/` - Page components (Home, Log, Fleet, Atlas, Ledger, Cargo, Jobs, Gallery, Config)
+- `components/layout/` - TitleBar, Sidebar, StatusBar
 
 ### IPC Pattern
 
@@ -60,16 +63,18 @@ ipcMain.handle('db:ships:create', async (_, data) => {
 Drizzle schema → inferred types → IPC handlers → api.ts → React components
 ```
 
-Types defined in `src/types/database.ts` mirror schema definitions. Use `typeof schema.ships.$inferSelect` pattern for database types.
+Types defined in `src/types/database.ts` as manually defined interfaces mirroring the schema. Input types use `Omit<Entity, 'id' | 'createdAt' | ...>` with `Partial<>` for updates.
 
 ## Key Directories
 
 ```
 electron/database/handlers/  # Add new IPC handlers here (one file per entity)
 src/views/                   # Add new pages here
-src/components/ui/           # Reusable UI components (Button, Modal, Card, etc.)
-src/components/{feature}/    # Feature-specific components (fleet/, atlas/, journal/)
+src/components/ui/           # Reusable UI components (Button, Modal, Card, Input, Select, etc.)
+src/components/{feature}/    # Feature-specific components (fleet/, atlas/, journal/, cargo/, jobs/, gallery/)
+src/components/layout/       # Layout components (TitleBar, Sidebar, StatusBar)
 src/lib/db/                  # API client and data fetching hooks
+src/stores/                  # Zustand stores (navigation, refresh)
 ```
 
 ## Adding New Features
@@ -79,14 +84,21 @@ src/lib/db/                  # API client and data fetching hooks
 3. Register in `electron/database/handlers/index.ts`
 4. Add types to `src/types/database.ts`
 5. Add API methods to `src/lib/db/api.ts`
-6. Create view in `src/views/{Feature}View.tsx`
-7. Add navigation entry to `src/stores/navigation.ts` and `src/components/layout/Sidebar.tsx`
+6. Add data fetching hooks to `src/lib/db/hooks.ts`
+7. Create view in `src/views/{Feature}View.tsx`
+8. Add navigation entry to `src/stores/navigation.ts` and `src/components/layout/Sidebar.tsx`
 
 ## Domain Notes
 
-- Ships have manufacturers, models, variants, roles, and optional wiki URLs
-- Locations are hierarchical (system → planet → moon → station) via parentId
+- Ships have manufacturers, models, nicknames, variants, roles, ownership status (isOwned), acquisition date/price, notes, image path, and optional wiki URLs
+- Ship acquisition automatically creates a purchase transaction in the ledger
+- Locations are hierarchical (system → planet → moon → station) via parentId, with services (JSON), visit count tracking, and favorite flag
 - Coordinates use per-axis units (km or m for X, Y, Z independently)
 - Journal entry types: journal, cargo, combat, acquisition, mining, scavenging
-- Cargo quantities measured in SCU (Standard Cargo Units)
-- All timestamps use ISO 8601 format
+- Journal entries support mood tracking, tags (JSON), and favorite marking
+- Transaction categories: cargo, mission, repair, fuel, purchase, sale, other (positive amount = income, negative = expense)
+- Cargo quantities measured in SCU (Standard Cargo Units); cargo run statuses: in_progress, completed, failed
+- Mission types: bounty, delivery, mining, salvage, investigation, escort; statuses: active, completed, failed, abandoned
+- Screenshots are copied to app userData directory with UUID filenames; support linking to locations, ships, and journal entries
+- Sessions track gaming time with optional starting/ending balance
+- All timestamps stored as Date objects

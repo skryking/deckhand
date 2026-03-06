@@ -4,10 +4,12 @@ import { Button, SearchInput } from '../components/ui'
 import { ShipCard, ShipModal, ShipDetailModal } from '../components/fleet'
 import { useShips } from '../lib/db'
 import { shipsApi } from '../lib/db/api'
+import { useRefresh } from '../stores'
 import type { Ship as ShipType, CreateShipInput, UpdateShipInput, ShipCurrentLocation } from '../types/database'
 
 export function FleetView() {
   const { data: ships, loading, refetch } = useShips()
+  const invalidateBalance = useRefresh((s) => s.invalidateBalance)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingShip, setEditingShip] = useState<ShipType | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -58,6 +60,7 @@ export function FleetView() {
       await shipsApi.create(data as CreateShipInput)
     }
     refetch()
+    invalidateBalance()
   }
 
   const handleEdit = (ship: ShipType) => {
@@ -74,6 +77,7 @@ export function FleetView() {
       await shipsApi.delete(deleteConfirm.id)
       setDeleteConfirm(null)
       refetch()
+      invalidateBalance()
     }
   }
 

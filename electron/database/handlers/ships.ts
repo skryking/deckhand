@@ -28,11 +28,26 @@ export function registerShipHandlers(): void {
     }
   });
 
-  // Create ship
+  // Create ship + purchase transaction
   ipcMain.handle('db:ships:create', async (_, data: typeof schema.ships.$inferInsert): Promise<DbResponse> => {
     try {
       const db = getDatabase();
-      const result = db.insert(schema.ships).values(data).returning().get();
+      const result = db.transaction((tx) => {
+        const newShip = tx.insert(schema.ships).values(data).returning().get();
+
+        // Create purchase expense transaction if price is set
+        if (newShip.acquiredPrice != null && newShip.acquiredPrice > 0) {
+          tx.insert(schema.transactions).values({
+            timestamp: newShip.acquiredAt ?? new Date(),
+            amount: -newShip.acquiredPrice,
+            category: 'purchase',
+            description: `Ship purchase: ${newShip.manufacturer} ${newShip.model}`,
+            shipId: newShip.id,
+          }).run();
+        }
+
+        return newShip;
+      });
       return { success: true, data: result };
     } catch (error) {
       console.error('[Ships] create error:', error);
@@ -40,16 +55,56 @@ export function registerShipHandlers(): void {
     }
   });
 
-  // Update ship
+  // Update ship + sync purchase transaction
   ipcMain.handle('db:ships:update', async (_, id: string, data: Partial<typeof schema.ships.$inferInsert>): Promise<DbResponse> => {
     try {
       const db = getDatabase();
-      const result = db
-        .update(schema.ships)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(schema.ships.id, id))
-        .returning()
-        .get();
+      const result = db.transaction((tx) => {
+        const current = tx.select().from(schema.ships).where(eq(schema.ships.id, id)).get();
+        if (!current) throw new Error('Ship not found');
+
+        const updated = tx
+          .update(schema.ships)
+          .set({ ...data, updatedAt: new Date() })
+          .where(eq(schema.ships.id, id))
+          .returning()
+          .get();
+
+        // Sync purchase transaction
+        const existingTxn = tx.select().from(schema.transactions)
+          .where(and(eq(schema.transactions.shipId, id), eq(schema.transactions.category, 'purchase')))
+          .get();
+
+        if (updated.acquiredPrice != null && updated.acquiredPrice > 0) {
+          if (existingTxn) {
+            // Update existing purchase transaction
+            tx.update(schema.transactions)
+              .set({
+                amount: -updated.acquiredPrice,
+                description: `Ship purchase: ${updated.manufacturer} ${updated.model}`,
+                timestamp: updated.acquiredAt ?? existingTxn.timestamp,
+              })
+              .where(eq(schema.transactions.id, existingTxn.id))
+              .run();
+          } else {
+            // Create new purchase transaction (price was added)
+            tx.insert(schema.transactions).values({
+              timestamp: updated.acquiredAt ?? new Date(),
+              amount: -updated.acquiredPrice,
+              category: 'purchase',
+              description: `Ship purchase: ${updated.manufacturer} ${updated.model}`,
+              shipId: id,
+            }).run();
+          }
+        } else if (existingTxn) {
+          // Price was removed — delete the purchase transaction
+          tx.delete(schema.transactions)
+            .where(eq(schema.transactions.id, existingTxn.id))
+            .run();
+        }
+
+        return updated;
+      });
       return { success: true, data: result };
     } catch (error) {
       console.error('[Ships] update error:', error);
@@ -57,11 +112,16 @@ export function registerShipHandlers(): void {
     }
   });
 
-  // Delete ship
+  // Delete ship + associated purchase transaction
   ipcMain.handle('db:ships:delete', async (_, id: string): Promise<DbResponse> => {
     try {
       const db = getDatabase();
-      db.delete(schema.ships).where(eq(schema.ships.id, id)).run();
+      db.transaction((tx) => {
+        tx.delete(schema.transactions)
+          .where(and(eq(schema.transactions.shipId, id), eq(schema.transactions.category, 'purchase')))
+          .run();
+        tx.delete(schema.ships).where(eq(schema.ships.id, id)).run();
+      });
       return { success: true };
     } catch (error) {
       console.error('[Ships] delete error:', error);

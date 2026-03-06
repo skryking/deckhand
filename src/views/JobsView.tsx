@@ -4,6 +4,7 @@ import { Button, SearchInput, StatCard, Modal, ModalFooter } from '../components
 import { MissionModal, MissionCard } from '../components/jobs'
 import { useMissions, useShips, useLocations } from '../lib/db'
 import { missionsApi } from '../lib/db/api'
+import { useRefresh } from '../stores'
 import type {
   Mission,
   CreateMissionInput,
@@ -16,6 +17,7 @@ export function JobsView() {
   const { data: missions, loading, refetch } = useMissions()
   const { data: ships } = useShips()
   const { data: locations } = useLocations()
+  const invalidateBalance = useRefresh((s) => s.invalidateBalance)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingMission, setEditingMission] = useState<Mission | null>(null)
@@ -93,6 +95,7 @@ export function JobsView() {
       await missionsApi.create(data as CreateMissionInput)
     }
     refetch()
+    invalidateBalance()
   }
 
   const handleEdit = (mission: Mission) => {
@@ -110,6 +113,7 @@ export function JobsView() {
       await missionsApi.delete(deleteConfirm.id)
       setDeleteConfirm(null)
       refetch()
+      invalidateBalance()
     }
   }
 

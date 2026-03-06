@@ -75,7 +75,24 @@ export function registerMissionHandlers(): void {
   ipcMain.handle('db:missions:create', async (_, data: typeof schema.missions.$inferInsert): Promise<DbResponse> => {
     try {
       const db = getDatabase();
-      const result = db.insert(schema.missions).values(data).returning().get();
+      const result = db.transaction((tx) => {
+        const newMission = tx.insert(schema.missions).values(data).returning().get();
+
+        // If created already completed with a reward, create the reward transaction
+        if (newMission.status === 'completed' && newMission.reward != null && newMission.reward > 0) {
+          tx.insert(schema.transactions).values({
+            timestamp: newMission.completedAt ?? new Date(),
+            amount: newMission.reward,
+            category: 'mission',
+            description: `Mission completed: ${newMission.title}`,
+            locationId: newMission.locationId,
+            shipId: newMission.shipId,
+            missionId: newMission.id,
+          }).run();
+        }
+
+        return newMission;
+      });
       return { success: true, data: result };
     } catch (error) {
       console.error('[Missions] create error:', error);
@@ -83,16 +100,62 @@ export function registerMissionHandlers(): void {
     }
   });
 
-  // Update mission
+  // Update mission + sync reward transaction
   ipcMain.handle('db:missions:update', async (_, id: string, data: Partial<typeof schema.missions.$inferInsert>): Promise<DbResponse> => {
     try {
       const db = getDatabase();
-      const result = db
-        .update(schema.missions)
-        .set(data)
-        .where(eq(schema.missions.id, id))
-        .returning()
-        .get();
+      const result = db.transaction((tx) => {
+        const current = tx.select().from(schema.missions).where(eq(schema.missions.id, id)).get();
+        if (!current) throw new Error('Mission not found');
+
+        const updated = tx
+          .update(schema.missions)
+          .set(data)
+          .where(eq(schema.missions.id, id))
+          .returning()
+          .get();
+
+        const wasCompleted = current.status === 'completed';
+        const isNowCompleted = updated.status === 'completed';
+
+        if (isNowCompleted && updated.reward != null && updated.reward > 0) {
+          // Check for existing reward transaction
+          const existingTxn = tx.select().from(schema.transactions)
+            .where(eq(schema.transactions.missionId, id))
+            .get();
+
+          if (existingTxn) {
+            // Update existing transaction (reward may have changed)
+            tx.update(schema.transactions)
+              .set({
+                amount: updated.reward,
+                description: `Mission completed: ${updated.title}`,
+                locationId: updated.locationId,
+                shipId: updated.shipId,
+              })
+              .where(eq(schema.transactions.id, existingTxn.id))
+              .run();
+          } else {
+            // Create new reward transaction
+            tx.insert(schema.transactions).values({
+              timestamp: updated.completedAt ?? new Date(),
+              amount: updated.reward,
+              category: 'mission',
+              description: `Mission completed: ${updated.title}`,
+              locationId: updated.locationId,
+              shipId: updated.shipId,
+              missionId: id,
+            }).run();
+          }
+        } else if (wasCompleted && !isNowCompleted) {
+          // Status moved away from completed — remove reward transaction
+          tx.delete(schema.transactions)
+            .where(eq(schema.transactions.missionId, id))
+            .run();
+        }
+
+        return updated;
+      });
       return { success: true, data: result };
     } catch (error) {
       console.error('[Missions] update error:', error);
@@ -100,19 +163,43 @@ export function registerMissionHandlers(): void {
     }
   });
 
-  // Complete mission
+  // Complete mission + create reward transaction
   ipcMain.handle('db:missions:complete', async (_, id: string): Promise<DbResponse> => {
     try {
       const db = getDatabase();
-      const result = db
-        .update(schema.missions)
-        .set({
-          status: 'completed',
-          completedAt: new Date(),
-        })
-        .where(eq(schema.missions.id, id))
-        .returning()
-        .get();
+      const result = db.transaction((tx) => {
+        const mission = tx.select().from(schema.missions).where(eq(schema.missions.id, id)).get();
+        if (!mission) throw new Error('Mission not found');
+
+        const completedAt = new Date();
+        const updated = tx
+          .update(schema.missions)
+          .set({ status: 'completed', completedAt })
+          .where(eq(schema.missions.id, id))
+          .returning()
+          .get();
+
+        // Create reward transaction if reward exists
+        if (mission.reward != null && mission.reward > 0) {
+          const existingTxn = tx.select().from(schema.transactions)
+            .where(eq(schema.transactions.missionId, id))
+            .get();
+
+          if (!existingTxn) {
+            tx.insert(schema.transactions).values({
+              timestamp: completedAt,
+              amount: mission.reward,
+              category: 'mission',
+              description: `Mission completed: ${mission.title}`,
+              locationId: mission.locationId,
+              shipId: mission.shipId,
+              missionId: id,
+            }).run();
+          }
+        }
+
+        return updated;
+      });
       return { success: true, data: result };
     } catch (error) {
       console.error('[Missions] complete error:', error);
@@ -120,11 +207,14 @@ export function registerMissionHandlers(): void {
     }
   });
 
-  // Delete mission
+  // Delete mission + associated transactions
   ipcMain.handle('db:missions:delete', async (_, id: string): Promise<DbResponse> => {
     try {
       const db = getDatabase();
-      db.delete(schema.missions).where(eq(schema.missions.id, id)).run();
+      db.transaction((tx) => {
+        tx.delete(schema.transactions).where(eq(schema.transactions.missionId, id)).run();
+        tx.delete(schema.missions).where(eq(schema.missions.id, id)).run();
+      });
       return { success: true };
     } catch (error) {
       console.error('[Missions] delete error:', error);

@@ -65,6 +65,8 @@ export interface Transaction {
   locationId: string | null;
   shipId: string | null;
   journalEntryId: string | null;
+  missionId: string | null;
+  cargoRunId: string | null;
   createdAt: Date | null;
 }
 

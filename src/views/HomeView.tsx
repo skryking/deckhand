@@ -1,9 +1,9 @@
-import { useMemo } from 'react'
-import { BookOpen, Ship, Globe, Wallet, Package, Target, Image, Clock } from 'lucide-react'
+import { useEffect, useMemo } from 'react'
+import { BookOpen, Ship, Globe, Wallet, Package, Target, Image, Clock, Play, Pause, Square, RotateCcw } from 'lucide-react'
 import { StatCard } from '../components/ui'
-import { useNavigation } from '../stores'
-import { useJournalCount, useShips, useLocations, useBalance, useJournalEntries, useTransactions, useMissions } from '../lib/db/hooks'
-import type { JournalEntry, Transaction, Mission } from '../types/database'
+import { useNavigation, useSession, useRefresh } from '../stores'
+import { useJournalCount, useShips, useLocations, useBalance, useJournalEntries, useTransactions, useMissions, useSessions } from '../lib/db/hooks'
+import type { JournalEntry, Transaction, Mission, Session } from '../types/database'
 
 interface QuickLinkProps {
   icon: React.ReactNode
@@ -31,17 +31,25 @@ function QuickLink({ icon, label, viewId }: QuickLinkProps) {
 
 type ActivityItem = {
   id: string
-  type: 'journal' | 'transaction' | 'mission'
+  type: 'journal' | 'transaction' | 'mission' | 'session'
   label: string
   detail: string | null
   timestamp: Date
-  viewId: 'log' | 'ledger' | 'jobs'
+  viewId: 'log' | 'ledger' | 'jobs' | 'home'
+}
+
+function formatDuration(minutes: number | null): string {
+  if (!minutes) return '0m'
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 
 function toActivityItems(
   journal: JournalEntry[] | null,
   transactions: Transaction[] | null,
   missions: Mission[] | null,
+  sessions: Session[] | null,
 ): ActivityItem[] {
   const items: ActivityItem[] = []
 
@@ -79,6 +87,18 @@ function toActivityItems(
     })
   }
 
+  for (const s of sessions ?? []) {
+    if (!s.endedAt) continue
+    items.push({
+      id: s.id,
+      type: 'session',
+      label: 'Gaming Session',
+      detail: formatDuration(s.durationMinutes),
+      timestamp: new Date(s.endedAt),
+      viewId: 'home',
+    })
+  }
+
   items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
   return items.slice(0, 10)
 }
@@ -100,10 +120,27 @@ const activityIcons: Record<ActivityItem['type'], React.ReactNode> = {
   journal: <BookOpen className="w-4 h-4" />,
   transaction: <Wallet className="w-4 h-4" />,
   mission: <Target className="w-4 h-4" />,
+  session: <Clock className="w-4 h-4" />,
+}
+
+function formatSessionTime(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  return `${hours}h ${String(minutes).padStart(2, '0')}m`
 }
 
 export function HomeView() {
   const setActiveView = useNavigation((s) => s.setActiveView)
+  const activeSession = useSession((s) => s.activeSession)
+  const elapsedSeconds = useSession((s) => s.elapsedSeconds)
+  const sessionPaused = useSession((s) => s.paused)
+  const sessionLoading = useSession((s) => s.loading)
+  const startSession = useSession((s) => s.start)
+  const stopSession = useSession((s) => s.stop)
+  const pauseSession = useSession((s) => s.pause)
+  const resumeSession = useSession((s) => s.resume)
+  const resetSession = useSession((s) => s.reset)
+  const isActive = !!activeSession
   const { data: journalCount } = useJournalCount()
   const { data: ships } = useShips()
   const { data: locations } = useLocations()
@@ -111,10 +148,18 @@ export function HomeView() {
   const { data: recentJournal } = useJournalEntries({ limit: 5 })
   const { data: recentTransactions } = useTransactions({ limit: 5 })
   const { data: recentMissions } = useMissions({ limit: 5 })
+  const { data: recentSessions, refetch: refetchSessions } = useSessions({ limit: 5 })
+  const sessionVersion = useRefresh((s) => s.sessionVersion)
+
+  useEffect(() => {
+    if (sessionVersion > 0) {
+      refetchSessions()
+    }
+  }, [sessionVersion, refetchSessions])
 
   const activityItems = useMemo(
-    () => toActivityItems(recentJournal, recentTransactions, recentMissions),
-    [recentJournal, recentTransactions, recentMissions],
+    () => toActivityItems(recentJournal, recentTransactions, recentMissions, recentSessions),
+    [recentJournal, recentTransactions, recentMissions, recentSessions],
   )
 
   return (
@@ -127,9 +172,63 @@ export function HomeView() {
         </div>
         <div className="flex gap-3 items-center">
           <span className="font-mono text-xs text-text-muted flex items-center gap-2">
-            <Clock className="w-3.5 h-3.5" />
-            Session: 0h 0m
+            {isActive && !sessionPaused ? (
+              <div className="w-2 h-2 rounded-full bg-teal-bright status-pulse glow-teal" />
+            ) : isActive && sessionPaused ? (
+              <div className="w-2 h-2 rounded-full bg-amber-400" />
+            ) : (
+              <Clock className="w-3.5 h-3.5" />
+            )}
+            Session: {formatSessionTime(elapsedSeconds)}
           </span>
+          {!isActive ? (
+            <button
+              onClick={() => startSession()}
+              disabled={sessionLoading}
+              className="text-text-muted hover:text-teal-bright transition-colors disabled:opacity-50"
+              title="Start session"
+            >
+              <Play className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <>
+              {sessionPaused ? (
+                <button
+                  onClick={() => resumeSession()}
+                  disabled={sessionLoading}
+                  className="text-text-muted hover:text-teal-bright transition-colors disabled:opacity-50"
+                  title="Resume session"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => pauseSession()}
+                  disabled={sessionLoading}
+                  className="text-text-muted hover:text-amber-400 transition-colors disabled:opacity-50"
+                  title="Pause session"
+                >
+                  <Pause className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <button
+                onClick={() => stopSession()}
+                disabled={sessionLoading}
+                className="text-text-muted hover:text-red-400 transition-colors disabled:opacity-50"
+                title="Stop session"
+              >
+                <Square className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => resetSession()}
+                disabled={sessionLoading}
+                className="text-text-muted hover:text-amber-400 transition-colors disabled:opacity-50"
+                title="Reset session"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
         </div>
       </header>
 

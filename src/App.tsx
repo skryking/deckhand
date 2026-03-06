@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { TitleBar, Sidebar, StatusBar } from "./components/layout";
-import { useNavigation, useRefresh } from "./stores";
+import { useNavigation, useRefresh, useSession } from "./stores";
 import { useBalance } from "./lib/db";
 import {
   HomeView,
@@ -18,6 +18,12 @@ function App() {
   const activeView = useNavigation((s) => s.activeView);
   const balanceVersion = useRefresh((s) => s.balanceVersion);
   const { data: balance, refetch: refetchBalance } = useBalance();
+  const initializeSession = useSession((s) => s.initialize);
+
+  // Initialize session on mount (resume active session if any)
+  useEffect(() => {
+    initializeSession();
+  }, [initializeSession]);
 
   // Refetch balance when it's invalidated
   useEffect(() => {
@@ -64,7 +70,6 @@ function App() {
       </div>
 
       <StatusBar
-        sessionTime="0h 0m"
         balance={(balance ?? 0).toLocaleString()}
         location="--"
         ship="--"

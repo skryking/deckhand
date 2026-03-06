@@ -24,10 +24,14 @@ export const useNavigation = create<NavigationState>((set) => ({
 // Store for triggering data refreshes across components
 interface RefreshState {
   balanceVersion: number
+  sessionVersion: number
   invalidateBalance: () => void
+  invalidateSessions: () => void
 }
 
 export const useRefresh = create<RefreshState>((set) => ({
   balanceVersion: 0,
+  sessionVersion: 0,
   invalidateBalance: () => set((state) => ({ balanceVersion: state.balanceVersion + 1 })),
+  invalidateSessions: () => set((state) => ({ sessionVersion: state.sessionVersion + 1 })),
 }))

@@ -17,6 +17,7 @@ import {
   Eye,
   Ship,
   Pencil,
+  MapPinPlus,
 } from "lucide-react";
 import { Modal, ModalFooter, Button, LinkedScreenshots } from "../ui";
 import { useScreenshotsByLocation } from "../../lib/db";
@@ -26,6 +27,7 @@ interface LocationDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onEdit: () => void;
+  onRecordVisit: () => void;
   location: Location | null;
   parentName?: string;
   shipsAtLocation?: ShipAtLocation[];
@@ -75,6 +77,7 @@ export function LocationDetailModal({
   isOpen,
   onClose,
   onEdit,
+  onRecordVisit,
   location,
   parentName,
   shipsAtLocation,
@@ -263,10 +266,16 @@ export function LocationDetailModal({
         <Button variant="ghost" onClick={onClose}>
           Close
         </Button>
-        <Button onClick={onEdit}>
-          <Pencil className="w-4 h-4 mr-1" />
-          Edit
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={onRecordVisit}>
+            <MapPinPlus className="w-4 h-4 mr-1" />
+            Record Visit
+          </Button>
+          <Button onClick={onEdit}>
+            <Pencil className="w-4 h-4 mr-1" />
+            Edit
+          </Button>
+        </div>
       </ModalFooter>
     </Modal>
   );

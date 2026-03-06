@@ -271,6 +271,16 @@ export function AtlasView() {
           setDetailLocation(null)
         }}
         onEdit={handleDetailEdit}
+        onRecordVisit={async () => {
+          if (!detailLocation) return
+          try {
+            const updated = await locationsApi.incrementVisit(detailLocation.id)
+            setDetailLocation(updated)
+            refetch()
+          } catch (err) {
+            console.error('Failed to record visit:', err)
+          }
+        }}
         location={detailLocation}
         parentName={detailLocation ? parentNames[detailLocation.id] : undefined}
         shipsAtLocation={detailLocation ? shipsAtLocations[detailLocation.id] : undefined}

@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
 import { BookOpen, Ship, Globe, Wallet, Package, Target, Image, Clock } from 'lucide-react'
 import { StatCard } from '../components/ui'
 import { useNavigation } from '../stores'
-import { useJournalCount, useShips, useLocations, useBalance } from '../lib/db/hooks'
+import { useJournalCount, useShips, useLocations, useBalance, useJournalEntries, useTransactions, useMissions } from '../lib/db/hooks'
+import type { JournalEntry, Transaction, Mission } from '../types/database'
 
 interface QuickLinkProps {
   icon: React.ReactNode
@@ -27,11 +29,93 @@ function QuickLink({ icon, label, viewId }: QuickLinkProps) {
   )
 }
 
+type ActivityItem = {
+  id: string
+  type: 'journal' | 'transaction' | 'mission'
+  label: string
+  detail: string | null
+  timestamp: Date
+  viewId: 'log' | 'ledger' | 'jobs'
+}
+
+function toActivityItems(
+  journal: JournalEntry[] | null,
+  transactions: Transaction[] | null,
+  missions: Mission[] | null,
+): ActivityItem[] {
+  const items: ActivityItem[] = []
+
+  for (const j of journal ?? []) {
+    items.push({
+      id: j.id,
+      type: 'journal',
+      label: j.title || 'Untitled Entry',
+      detail: j.entryType,
+      timestamp: new Date(j.timestamp),
+      viewId: 'log',
+    })
+  }
+
+  for (const t of transactions ?? []) {
+    const sign = t.amount >= 0 ? '+' : ''
+    items.push({
+      id: t.id,
+      type: 'transaction',
+      label: t.description || t.category,
+      detail: `${sign}${t.amount.toLocaleString()} aUEC`,
+      timestamp: new Date(t.timestamp),
+      viewId: 'ledger',
+    })
+  }
+
+  for (const m of missions ?? []) {
+    items.push({
+      id: m.id,
+      type: 'mission',
+      label: m.title,
+      detail: m.status,
+      timestamp: new Date(m.acceptedAt ?? m.createdAt ?? new Date()),
+      viewId: 'jobs',
+    })
+  }
+
+  items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+  return items.slice(0, 10)
+}
+
+function formatRelativeTime(date: Date): string {
+  const now = Date.now()
+  const diff = now - date.getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days}d ago`
+  return date.toLocaleDateString()
+}
+
+const activityIcons: Record<ActivityItem['type'], React.ReactNode> = {
+  journal: <BookOpen className="w-4 h-4" />,
+  transaction: <Wallet className="w-4 h-4" />,
+  mission: <Target className="w-4 h-4" />,
+}
+
 export function HomeView() {
+  const setActiveView = useNavigation((s) => s.setActiveView)
   const { data: journalCount } = useJournalCount()
   const { data: ships } = useShips()
   const { data: locations } = useLocations()
   const { data: balance } = useBalance()
+  const { data: recentJournal } = useJournalEntries({ limit: 5 })
+  const { data: recentTransactions } = useTransactions({ limit: 5 })
+  const { data: recentMissions } = useMissions({ limit: 5 })
+
+  const activityItems = useMemo(
+    () => toActivityItems(recentJournal, recentTransactions, recentMissions),
+    [recentJournal, recentTransactions, recentMissions],
+  )
 
   return (
     <>
@@ -74,16 +158,51 @@ export function HomeView() {
           </div>
         </section>
 
-        {/* Recent Activity Placeholder */}
+        {/* Recent Activity */}
         <section>
           <h2 className="font-display text-sm font-medium tracking-display text-text-secondary mb-4 uppercase">
             Recent Activity
           </h2>
-          <div className="bg-panel border border-subtle rounded p-8 text-center">
-            <p className="text-text-muted text-sm">
-              No recent activity yet. Start by adding a journal entry or registering a ship.
-            </p>
-          </div>
+          {activityItems.length === 0 ? (
+            <div className="bg-panel border border-subtle rounded p-8 text-center">
+              <p className="text-text-muted text-sm">
+                No recent activity yet. Start by adding a journal entry or registering a ship.
+              </p>
+            </div>
+          ) : (
+            <div className="bg-panel border border-subtle rounded divide-y divide-subtle">
+              {activityItems.map((item) => (
+                <button
+                  key={`${item.type}-${item.id}`}
+                  onClick={() => setActiveView(item.viewId)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-teal-bright/5 transition-colors cursor-pointer text-left group"
+                >
+                  <span className="text-text-muted group-hover:text-teal-bright transition-colors">
+                    {activityIcons[item.type]}
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="text-sm text-text-primary truncate block">
+                      {item.label}
+                    </span>
+                  </span>
+                  {item.detail && (
+                    <span className={`text-xs font-mono whitespace-nowrap ${
+                      item.type === 'transaction'
+                        ? item.detail.startsWith('+')
+                          ? 'text-green-400'
+                          : 'text-red-400'
+                        : 'text-text-muted'
+                    }`}>
+                      {item.detail}
+                    </span>
+                  )}
+                  <span className="text-xs text-text-muted whitespace-nowrap">
+                    {formatRelativeTime(item.timestamp)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </section>
       </main>
     </>

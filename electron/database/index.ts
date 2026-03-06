@@ -161,6 +161,16 @@ function createTables(sqlite: Database.Database): void {
     )
   `);
 
+  // Migration: Add missionId and cargoRunId to transactions
+  const txnColumns = sqlite.prepare("PRAGMA table_info(transactions)").all() as { name: string }[];
+  const txnColumnNames = txnColumns.map(c => c.name);
+  if (!txnColumnNames.includes('mission_id')) {
+    sqlite.exec('ALTER TABLE transactions ADD COLUMN mission_id TEXT');
+  }
+  if (!txnColumnNames.includes('cargo_run_id')) {
+    sqlite.exec('ALTER TABLE transactions ADD COLUMN cargo_run_id TEXT');
+  }
+
   // Cargo runs table
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS cargo_runs (

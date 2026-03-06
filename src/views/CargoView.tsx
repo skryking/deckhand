@@ -4,6 +4,7 @@ import { Button, SearchInput, StatCard, Modal, ModalFooter } from '../components
 import { CargoRunModal, CargoRunCard } from '../components/cargo'
 import { useCargoRuns, useShips, useLocations } from '../lib/db'
 import { cargoApi } from '../lib/db/api'
+import { useRefresh } from '../stores'
 import type {
   CargoRun,
   CreateCargoRunInput,
@@ -16,6 +17,7 @@ export function CargoView() {
   const { data: cargoRuns, loading, refetch } = useCargoRuns()
   const { data: ships } = useShips()
   const { data: locations } = useLocations()
+  const invalidateBalance = useRefresh((s) => s.invalidateBalance)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingRun, setEditingRun] = useState<CargoRun | null>(null)
@@ -86,6 +88,7 @@ export function CargoView() {
       await cargoApi.create(data as CreateCargoRunInput)
     }
     refetch()
+    invalidateBalance()
   }
 
   const handleEdit = (run: CargoRun) => {
@@ -103,6 +106,7 @@ export function CargoView() {
       await cargoApi.delete(deleteConfirm.id)
       setDeleteConfirm(null)
       refetch()
+      invalidateBalance()
     }
   }
 

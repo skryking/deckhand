@@ -71,6 +71,8 @@ export const transactions = sqliteTable('transactions', {
   locationId: text('location_id'),
   shipId: text('ship_id'),
   journalEntryId: text('journal_entry_id'),
+  missionId: text('mission_id'),
+  cargoRunId: text('cargo_run_id'),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 

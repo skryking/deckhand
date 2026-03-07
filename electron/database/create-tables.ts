@@ -196,4 +196,27 @@ export function createTables(sqlite: Database.Database): void {
       created_at INTEGER
     )
   `);
+
+  // Indexes for foreign key columns and commonly queried fields
+  sqlite.exec(`
+    CREATE INDEX IF NOT EXISTS idx_locations_parent_id ON locations(parent_id);
+    CREATE INDEX IF NOT EXISTS idx_journal_entries_timestamp ON journal_entries(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_journal_entries_ship_id ON journal_entries(ship_id);
+    CREATE INDEX IF NOT EXISTS idx_journal_entries_location_id ON journal_entries(location_id);
+    CREATE INDEX IF NOT EXISTS idx_journal_entries_entry_type ON journal_entries(entry_type);
+    CREATE INDEX IF NOT EXISTS idx_transactions_timestamp ON transactions(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_transactions_ship_id ON transactions(ship_id);
+    CREATE INDEX IF NOT EXISTS idx_transactions_location_id ON transactions(location_id);
+    CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);
+    CREATE INDEX IF NOT EXISTS idx_transactions_cargo_run_id ON transactions(cargo_run_id);
+    CREATE INDEX IF NOT EXISTS idx_transactions_mission_id ON transactions(mission_id);
+    CREATE INDEX IF NOT EXISTS idx_cargo_runs_ship_id ON cargo_runs(ship_id);
+    CREATE INDEX IF NOT EXISTS idx_cargo_runs_status ON cargo_runs(status);
+    CREATE INDEX IF NOT EXISTS idx_missions_ship_id ON missions(ship_id);
+    CREATE INDEX IF NOT EXISTS idx_missions_status ON missions(status);
+    CREATE INDEX IF NOT EXISTS idx_screenshots_ship_id ON screenshots(ship_id);
+    CREATE INDEX IF NOT EXISTS idx_screenshots_location_id ON screenshots(location_id);
+    CREATE INDEX IF NOT EXISTS idx_screenshots_journal_entry_id ON screenshots(journal_entry_id);
+    CREATE INDEX IF NOT EXISTS idx_sessions_started_at ON sessions(started_at);
+  `);
 }

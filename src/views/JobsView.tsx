@@ -5,6 +5,7 @@ import { MissionModal, MissionCard } from '../components/jobs'
 import { useMissions, useShips, useLocations } from '../lib/db'
 import { missionsApi } from '../lib/db/api'
 import { useRefresh } from '../stores'
+import { buildShipNameMap } from '../lib/format'
 import type {
   Mission,
   CreateMissionInput,
@@ -34,13 +35,7 @@ export function JobsView() {
     return map
   }, [locations])
 
-  const shipNames = useMemo(() => {
-    const map: Record<string, string> = {}
-    ships?.forEach((ship) => {
-      map[ship.id] = ship.nickname || `${ship.manufacturer} ${ship.model}`
-    })
-    return map
-  }, [ships])
+  const shipNames = useMemo(() => buildShipNameMap(ships), [ships])
 
   // Filter and search
   const filteredMissions = useMemo(() => {

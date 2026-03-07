@@ -2,6 +2,7 @@ import { ipcMain } from 'electron';
 import { getDatabase } from '../index';
 import type { DbResponse, QueryOptions } from '../../../src/types/database';
 import * as cargoLogic from './cargo.logic';
+import { validateCargoRunInput } from './validation';
 
 export function registerCargoHandlers(): void {
   ipcMain.handle('db:cargo:findAll', async (_, options?: QueryOptions): Promise<DbResponse> => {
@@ -36,6 +37,7 @@ export function registerCargoHandlers(): void {
 
   ipcMain.handle('db:cargo:create', async (_, data: Parameters<typeof cargoLogic.createCargoRun>[1]): Promise<DbResponse> => {
     try {
+      validateCargoRunInput(data as unknown as Record<string, unknown>);
       const result = cargoLogic.createCargoRun(getDatabase(), data);
       return { success: true, data: result };
     } catch (error) {
@@ -46,6 +48,7 @@ export function registerCargoHandlers(): void {
 
   ipcMain.handle('db:cargo:update', async (_, id: string, data: Parameters<typeof cargoLogic.updateCargoRun>[2]): Promise<DbResponse> => {
     try {
+      validateCargoRunInput(data as unknown as Record<string, unknown>, true);
       const result = cargoLogic.updateCargoRun(getDatabase(), id, data);
       return { success: true, data: result };
     } catch (error) {

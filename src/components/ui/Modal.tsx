@@ -1,5 +1,8 @@
-import { type HTMLAttributes, forwardRef, useEffect } from "react";
+import { type HTMLAttributes, forwardRef, useEffect, useRef } from "react";
 import { X } from "lucide-react";
+
+// Track how many modals are currently open to avoid scroll lock conflicts
+let openModalCount = 0;
 
 interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
@@ -17,19 +20,29 @@ const sizeStyles: Record<string, string> = {
 
 export const Modal = forwardRef<HTMLDivElement, ModalProps>(
   ({ isOpen, onClose, title, size = "md", children, className = "", ...props }, ref) => {
+    const wasOpenRef = useRef(false);
+
     useEffect(() => {
       const handleEscape = (e: KeyboardEvent) => {
         if (e.key === "Escape") onClose();
       };
 
-      if (isOpen) {
+      if (isOpen && !wasOpenRef.current) {
+        openModalCount++;
+        wasOpenRef.current = true;
         document.addEventListener("keydown", handleEscape);
         document.body.style.overflow = "hidden";
       }
 
       return () => {
         document.removeEventListener("keydown", handleEscape);
-        document.body.style.overflow = "";
+        if (wasOpenRef.current) {
+          openModalCount--;
+          wasOpenRef.current = false;
+          if (openModalCount === 0) {
+            document.body.style.overflow = "";
+          }
+        }
       };
     }, [isOpen, onClose]);
 

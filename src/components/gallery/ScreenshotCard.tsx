@@ -1,4 +1,5 @@
 import { Star, Globe, Ship } from "lucide-react";
+import { formatDate } from "../../lib/format";
 import type { Screenshot } from "../../types/database";
 
 interface ScreenshotCardProps {
@@ -14,16 +15,6 @@ export function ScreenshotCard({
   shipName,
   onClick,
 }: ScreenshotCardProps) {
-  const formatDate = (date: Date | null) => {
-    if (!date) return "";
-    const d = new Date(date);
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
   return (
     <div
       onClick={onClick}

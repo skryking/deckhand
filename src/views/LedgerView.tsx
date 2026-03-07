@@ -5,6 +5,7 @@ import { TransactionModal, TransactionCard, LedgerFilters } from '../components/
 import { useTransactions, useBalance, useShips, useLocations } from '../lib/db'
 import { transactionsApi } from '../lib/db/api'
 import { useRefresh } from '../stores'
+import { buildShipNameMap } from '../lib/format'
 import type {
   Transaction,
   CreateTransactionInput,
@@ -28,13 +29,7 @@ export function LedgerView() {
   const [deleteConfirm, setDeleteConfirm] = useState<Transaction | null>(null)
 
   // Name lookup maps
-  const shipNames = useMemo(() => {
-    const map: Record<string, string> = {}
-    ships?.forEach((ship) => {
-      map[ship.id] = ship.nickname || `${ship.manufacturer} ${ship.model}`
-    })
-    return map
-  }, [ships])
+  const shipNames = useMemo(() => buildShipNameMap(ships), [ships])
 
   const locationNames = useMemo(() => {
     const map: Record<string, string> = {}

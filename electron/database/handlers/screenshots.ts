@@ -150,7 +150,8 @@ export function registerScreenshotHandlers(): void {
   ipcMain.handle('db:screenshots:search', async (_, query: string): Promise<DbResponse> => {
     try {
       const db = getDatabase();
-      const searchTerm = `%${query}%`;
+      const escaped = query.replace(/[%_]/g, '\\$&');
+      const searchTerm = `%${escaped}%`;
       const results = db
         .select()
         .from(schema.screenshots)

@@ -33,16 +33,25 @@ function useFetch<T>(
   const fetchFnRef = useRef(fetchFn);
   fetchFnRef.current = fetchFn;
 
+  // Track request sequence to ignore stale responses
+  const requestIdRef = useRef(0);
+
   const refetch = useCallback(async () => {
+    const currentRequestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
     try {
       const result = await fetchFnRef.current();
-      setData(result);
+      // Only update state if this is still the latest request
+      if (currentRequestId === requestIdRef.current) {
+        setData(result);
+        setLoading(false);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        setError(err instanceof Error ? err : new Error(String(err)));
+        setLoading(false);
+      }
     }
   }, []);
 

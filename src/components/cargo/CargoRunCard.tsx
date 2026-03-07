@@ -1,4 +1,5 @@
 import { Package, Globe, Ship, ArrowRight, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { formatShortDateTime } from "../../lib/format";
 import type { CargoRun } from "../../types/database";
 
 interface CargoRunCardProps {
@@ -38,20 +39,7 @@ export function CargoRunCard({
   const hasProfit = cargoRun.profit !== null && cargoRun.profit !== undefined;
   const isPositive = hasProfit && cargoRun.profit! >= 0;
 
-  const formatDate = (date: Date) => {
-    const d = new Date(date);
-    return (
-      d.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      }) +
-      " · " +
-      d.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    );
-  };
+  const formatDate = formatShortDateTime;
 
   return (
     <div

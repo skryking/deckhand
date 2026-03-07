@@ -5,3 +5,4 @@ export { Modal, ModalFooter } from "./Modal";
 export { Textarea } from "./Textarea";
 export { Select } from "./Select";
 export { LinkedScreenshots } from "./LinkedScreenshots";
+export { ErrorBoundary } from "./ErrorBoundary";

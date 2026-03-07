@@ -2,6 +2,7 @@ import { ipcMain } from 'electron';
 import { getDatabase } from '../index';
 import type { DbResponse } from '../../../src/types/database';
 import * as locationsLogic from './locations.logic';
+import { validateLocationInput } from './validation';
 
 export function registerLocationHandlers(): void {
   ipcMain.handle('db:locations:findAll', async (): Promise<DbResponse> => {
@@ -46,6 +47,7 @@ export function registerLocationHandlers(): void {
 
   ipcMain.handle('db:locations:create', async (_, data: Parameters<typeof locationsLogic.createLocation>[1]): Promise<DbResponse> => {
     try {
+      validateLocationInput(data as unknown as Record<string, unknown>);
       const result = locationsLogic.createLocation(getDatabase(), data);
       return { success: true, data: result };
     } catch (error) {
@@ -56,6 +58,7 @@ export function registerLocationHandlers(): void {
 
   ipcMain.handle('db:locations:update', async (_, id: string, data: Parameters<typeof locationsLogic.updateLocation>[2]): Promise<DbResponse> => {
     try {
+      validateLocationInput(data as unknown as Record<string, unknown>, true);
       const result = locationsLogic.updateLocation(getDatabase(), id, data);
       return { success: true, data: result };
     } catch (error) {

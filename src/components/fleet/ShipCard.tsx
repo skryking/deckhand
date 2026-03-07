@@ -1,6 +1,7 @@
 import { Ship, Calendar, Wallet, MoreVertical, Pencil, Trash2, ExternalLink, MapPin } from "lucide-react";
 import { useState } from "react";
 import type { Ship as ShipType, ShipCurrentLocation } from "../../types/database";
+import { formatDate } from "../../lib/format";
 
 interface ShipCardProps {
   ship: ShipType;
@@ -12,15 +13,6 @@ interface ShipCardProps {
 
 export function ShipCard({ ship, currentLocation, onEdit, onDelete, onClick }: ShipCardProps) {
   const [showMenu, setShowMenu] = useState(false);
-
-  const formatDate = (date: Date | null) => {
-    if (!date) return null;
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   const formatPrice = (price: number | null) => {
     if (!price) return null;

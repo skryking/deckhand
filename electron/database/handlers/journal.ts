@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { eq, like, or, desc } from 'drizzle-orm';
+import { eq, like, or, desc, count } from 'drizzle-orm';
 import { getDatabase, schema } from '../index';
 import type { DbResponse, QueryOptions } from '../../../src/types/database';
 
@@ -116,7 +116,8 @@ export function registerJournalHandlers(): void {
   ipcMain.handle('db:journal:search', async (_, query: string): Promise<DbResponse> => {
     try {
       const db = getDatabase();
-      const searchTerm = `%${query}%`;
+      const escaped = query.replace(/[%_]/g, '\\$&');
+      const searchTerm = `%${escaped}%`;
       const results = db
         .select()
         .from(schema.journalEntries)
@@ -139,8 +140,8 @@ export function registerJournalHandlers(): void {
   ipcMain.handle('db:journal:count', async (): Promise<DbResponse> => {
     try {
       const db = getDatabase();
-      const results = db.select().from(schema.journalEntries).all();
-      return { success: true, data: results.length };
+      const result = db.select({ value: count() }).from(schema.journalEntries).get();
+      return { success: true, data: result?.value ?? 0 };
     } catch (error) {
       console.error('[Journal] count error:', error);
       return { success: false, error: String(error) };

@@ -86,7 +86,8 @@ export function deleteShip(db: DB, id: string) {
 }
 
 export function searchShips(db: DB, query: string) {
-  const searchTerm = `%${query}%`;
+  const escaped = query.replace(/[%_]/g, '\\$&');
+  const searchTerm = `%${escaped}%`;
   return db
     .select()
     .from(schema.ships)

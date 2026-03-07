@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Modal, ModalFooter, Button, Input, Textarea, Select } from "../ui";
+import { formatDateTimeLocal } from "../../lib/format";
 import type {
   Transaction,
   CreateTransactionInput,
@@ -7,26 +8,6 @@ import type {
   Ship,
   Location,
 } from "../../types/database";
-
-interface TransactionModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (data: CreateTransactionInput | UpdateTransactionInput) => Promise<void>;
-  onDelete?: () => void;
-  transaction?: Transaction | null;
-  ships: Ship[];
-  locations: Location[];
-}
-
-// Format date for datetime-local input (local time, not UTC)
-function formatDateTimeLocal(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
 
 const categoryOptions = [
   { value: "mission", label: "Mission Payout" },
@@ -46,6 +27,16 @@ const categoryOptions = [
   { value: "utilities", label: "Utilities" },
   { value: "other", label: "Other" },
 ];
+
+interface TransactionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (data: CreateTransactionInput | UpdateTransactionInput) => Promise<void>;
+  onDelete?: () => void;
+  transaction?: Transaction | null;
+  ships: Ship[];
+  locations: Location[];
+}
 
 export function TransactionModal({
   isOpen,

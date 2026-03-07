@@ -46,6 +46,9 @@ function createWindow() {
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
     },
   })
 
@@ -180,61 +183,63 @@ ipcMain.handle('data:import', async () => {
     }
 
     const db = getDatabase()
-
-    // Clear existing data and import new data
-    // Using transactions for atomicity
-    db.delete(schema.ships).run()
-    db.delete(schema.locations).run()
-    db.delete(schema.journalEntries).run()
-    db.delete(schema.transactions).run()
-    db.delete(schema.cargoRuns).run()
-    db.delete(schema.missions).run()
-    db.delete(schema.screenshots).run()
-    db.delete(schema.sessions).run()
-
-    // Import data
     const data = importData.data
 
-    if (data.ships?.length) {
-      for (const ship of data.ships) {
-        db.insert(schema.ships).values(ship).run()
+    // Wrap entire import in a transaction for atomicity —
+    // if any step fails, the database rolls back to its previous state
+    db.transaction((tx) => {
+      // Clear existing data
+      tx.delete(schema.screenshots).run()
+      tx.delete(schema.sessions).run()
+      tx.delete(schema.missions).run()
+      tx.delete(schema.cargoRuns).run()
+      tx.delete(schema.transactions).run()
+      tx.delete(schema.journalEntries).run()
+      tx.delete(schema.locations).run()
+      tx.delete(schema.ships).run()
+
+      // Import new data
+      if (data.ships?.length) {
+        for (const ship of data.ships) {
+          tx.insert(schema.ships).values(ship).run()
+        }
       }
-    }
-    if (data.locations?.length) {
-      for (const location of data.locations) {
-        db.insert(schema.locations).values(location).run()
+      if (data.locations?.length) {
+        for (const location of data.locations) {
+          tx.insert(schema.locations).values(location).run()
+        }
       }
-    }
-    if (data.journalEntries?.length) {
-      for (const entry of data.journalEntries) {
-        db.insert(schema.journalEntries).values(entry).run()
+      if (data.journalEntries?.length) {
+        for (const entry of data.journalEntries) {
+          tx.insert(schema.journalEntries).values(entry).run()
+        }
       }
-    }
-    if (data.transactions?.length) {
-      for (const transaction of data.transactions) {
-        db.insert(schema.transactions).values(transaction).run()
+      if (data.transactions?.length) {
+        for (const transaction of data.transactions) {
+          tx.insert(schema.transactions).values(transaction).run()
+        }
       }
-    }
-    if (data.cargoRuns?.length) {
-      for (const run of data.cargoRuns) {
-        db.insert(schema.cargoRuns).values(run).run()
+      if (data.cargoRuns?.length) {
+        for (const run of data.cargoRuns) {
+          tx.insert(schema.cargoRuns).values(run).run()
+        }
       }
-    }
-    if (data.missions?.length) {
-      for (const mission of data.missions) {
-        db.insert(schema.missions).values(mission).run()
+      if (data.missions?.length) {
+        for (const mission of data.missions) {
+          tx.insert(schema.missions).values(mission).run()
+        }
       }
-    }
-    if (data.screenshots?.length) {
-      for (const screenshot of data.screenshots) {
-        db.insert(schema.screenshots).values(screenshot).run()
+      if (data.screenshots?.length) {
+        for (const screenshot of data.screenshots) {
+          tx.insert(schema.screenshots).values(screenshot).run()
+        }
       }
-    }
-    if (data.sessions?.length) {
-      for (const session of data.sessions) {
-        db.insert(schema.sessions).values(session).run()
+      if (data.sessions?.length) {
+        for (const session of data.sessions) {
+          tx.insert(schema.sessions).values(session).run()
+        }
       }
-    }
+    })
 
     return { success: true, importedAt: importData.exportedAt }
   } catch (error) {
@@ -248,14 +253,16 @@ ipcMain.handle('data:clear', async () => {
   try {
     const db = getDatabase()
 
-    db.delete(schema.ships).run()
-    db.delete(schema.locations).run()
-    db.delete(schema.journalEntries).run()
-    db.delete(schema.transactions).run()
-    db.delete(schema.cargoRuns).run()
-    db.delete(schema.missions).run()
-    db.delete(schema.screenshots).run()
-    db.delete(schema.sessions).run()
+    db.transaction((tx) => {
+      tx.delete(schema.screenshots).run()
+      tx.delete(schema.sessions).run()
+      tx.delete(schema.missions).run()
+      tx.delete(schema.cargoRuns).run()
+      tx.delete(schema.transactions).run()
+      tx.delete(schema.journalEntries).run()
+      tx.delete(schema.locations).run()
+      tx.delete(schema.ships).run()
+    })
 
     return { success: true }
   } catch (error) {

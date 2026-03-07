@@ -4,6 +4,7 @@ import { Button, SearchInput, StatCard, Modal, ModalFooter } from '../components
 import { ScreenshotCard, ScreenshotModal } from '../components/gallery'
 import { useScreenshots, useShips, useLocations } from '../lib/db'
 import { screenshotsApi } from '../lib/db/api'
+import { buildShipNameMap } from '../lib/format'
 import type {
   Screenshot,
   CreateScreenshotInput,
@@ -32,13 +33,7 @@ export function GalleryView() {
     return map
   }, [locations])
 
-  const shipNames = useMemo(() => {
-    const map: Record<string, string> = {}
-    ships?.forEach((ship) => {
-      map[ship.id] = ship.nickname || `${ship.manufacturer} ${ship.model}`
-    })
-    return map
-  }, [ships])
+  const shipNames = useMemo(() => buildShipNameMap(ships), [ships])
 
   // Filter and search
   const filteredScreenshots = useMemo(() => {

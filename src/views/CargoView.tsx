@@ -5,6 +5,7 @@ import { CargoRunModal, CargoRunCard } from '../components/cargo'
 import { useCargoRuns, useShips, useLocations } from '../lib/db'
 import { cargoApi } from '../lib/db/api'
 import { useRefresh } from '../stores'
+import { buildShipNameMap } from '../lib/format'
 import type {
   CargoRun,
   CreateCargoRunInput,
@@ -34,13 +35,7 @@ export function CargoView() {
     return map
   }, [locations])
 
-  const shipNames = useMemo(() => {
-    const map: Record<string, string> = {}
-    ships?.forEach((ship) => {
-      map[ship.id] = ship.nickname || `${ship.manufacturer} ${ship.model}`
-    })
-    return map
-  }, [ships])
+  const shipNames = useMemo(() => buildShipNameMap(ships), [ships])
 
   // Filter and search
   const filteredRuns = useMemo(() => {

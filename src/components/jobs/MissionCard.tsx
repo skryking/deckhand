@@ -13,6 +13,7 @@ import {
   XCircle,
   Ban,
 } from "lucide-react";
+import { formatShortDateTime } from "../../lib/format";
 import type { Mission } from "../../types/database";
 
 interface MissionCardProps {
@@ -77,20 +78,7 @@ export function MissionCard({
   const typeLabel = typeLabels[missionType] || "Mission";
   const status = statusConfig[mission.status || "active"] || statusConfig.active;
 
-  const formatDate = (date: Date) => {
-    const d = new Date(date);
-    return (
-      d.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      }) +
-      " · " +
-      d.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    );
-  };
+  const formatDate = formatShortDateTime;
 
   return (
     <div

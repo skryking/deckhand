@@ -4,6 +4,7 @@ import { Button, SearchInput, EntryCard } from '../components/ui'
 import { JournalFilters, JournalEntryModal } from '../components/journal'
 import { useJournalEntries, useShips, useLocations } from '../lib/db'
 import { journalApi } from '../lib/db/api'
+import { buildShipNameMap, formatDateTime } from '../lib/format'
 import type {
   JournalEntry,
   CreateJournalEntryInput,
@@ -22,13 +23,7 @@ export function LogView() {
   const [deleteConfirm, setDeleteConfirm] = useState<JournalEntry | null>(null)
 
   // Build maps for ship/location names
-  const shipNames = useMemo(() => {
-    const map: Record<string, string> = {}
-    ships?.forEach((ship) => {
-      map[ship.id] = ship.nickname || `${ship.manufacturer} ${ship.model}`
-    })
-    return map
-  }, [ships])
+  const shipNames = useMemo(() => buildShipNameMap(ships), [ships])
 
   const locationNames = useMemo(() => {
     const map: Record<string, string> = {}
@@ -101,17 +96,7 @@ export function LogView() {
     setIsModalOpen(true)
   }
 
-  const formatDate = (date: Date) => {
-    const d = new Date(date)
-    return d.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    }) + ' · ' + d.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
+  const formatDate = formatDateTime
 
   const formatEntryType = (type: string | null) => {
     if (!type) return 'Journal'

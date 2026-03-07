@@ -34,6 +34,9 @@ export function initializeDatabase(): BetterSQLite3Database<typeof schema> {
   // Enable WAL mode for better performance
   sqlite.pragma('journal_mode = WAL');
   sqlite.pragma('foreign_keys = ON');
+  sqlite.pragma('synchronous = NORMAL');  // Safe with WAL, faster than FULL
+  sqlite.pragma('cache_size = -64000');   // 64MB cache
+  sqlite.pragma('temp_store = MEMORY');   // Store temp tables in memory
 
   // Create Drizzle instance with schema
   db = drizzle({ client: sqlite, schema });

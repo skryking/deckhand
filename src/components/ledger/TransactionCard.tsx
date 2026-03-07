@@ -17,6 +17,7 @@ import {
   Cpu,
   Zap,
 } from "lucide-react";
+import { formatDateTime } from "../../lib/format";
 import type { Transaction } from "../../types/database";
 
 interface TransactionCardProps {
@@ -74,21 +75,7 @@ export function TransactionCard({
   const formattedAmount = Math.abs(transaction.amount).toLocaleString();
   const amountDisplay = isIncome ? `+${formattedAmount}` : `-${formattedAmount}`;
 
-  const formatDate = (date: Date) => {
-    const d = new Date(date);
-    return (
-      d.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      }) +
-      " · " +
-      d.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    );
-  };
+  const formatDate = formatDateTime;
 
   const categoryIcon = categoryIcons[transaction.category] || categoryIcons.other;
   const categoryLabel = categoryLabels[transaction.category] || "Other";

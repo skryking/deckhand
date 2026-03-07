@@ -3,6 +3,7 @@ import { BookOpen, Ship, Globe, Wallet, Package, Target, Image, Clock, Play, Pau
 import { StatCard } from '../components/ui'
 import { useNavigation, useSession, useRefresh } from '../stores'
 import { useJournalCount, useShips, useLocations, useBalance, useJournalEntries, useTransactions, useMissions, useSessions } from '../lib/db/hooks'
+import { formatSessionTime } from '../lib/format'
 import type { JournalEntry, Transaction, Mission, Session } from '../types/database'
 
 interface QuickLinkProps {
@@ -121,12 +122,6 @@ const activityIcons: Record<ActivityItem['type'], React.ReactNode> = {
   transaction: <Wallet className="w-4 h-4" />,
   mission: <Target className="w-4 h-4" />,
   session: <Clock className="w-4 h-4" />,
-}
-
-function formatSessionTime(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  return `${hours}h ${String(minutes).padStart(2, '0')}m`
 }
 
 export function HomeView() {

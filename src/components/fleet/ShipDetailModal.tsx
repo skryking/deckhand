@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Modal, ModalFooter, Button, LinkedScreenshots } from "../ui";
 import { useScreenshotsByShip } from "../../lib/db";
+import { formatDate } from "../../lib/format";
 import type { Ship as ShipType, ShipCurrentLocation } from "../../types/database";
 
 interface ShipDetailModalProps {
@@ -29,15 +30,6 @@ export function ShipDetailModal({
   const { data: linkedScreenshots, refetch: refetchScreenshots } = useScreenshotsByShip(ship?.id ?? null);
 
   if (!ship) return null;
-
-  const formatDate = (date: Date | null) => {
-    if (!date) return null;
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   const formatPrice = (price: number | null) => {
     if (!price) return null;

@@ -2,6 +2,7 @@ import { ipcMain } from 'electron';
 import { getDatabase } from '../index';
 import type { DbResponse, QueryOptions } from '../../../src/types/database';
 import * as txnLogic from './transactions.logic';
+import { validateTransactionInput } from './validation';
 
 export function registerTransactionHandlers(): void {
   ipcMain.handle('db:transactions:findAll', async (_, options?: QueryOptions): Promise<DbResponse> => {
@@ -36,6 +37,7 @@ export function registerTransactionHandlers(): void {
 
   ipcMain.handle('db:transactions:create', async (_, data: Parameters<typeof txnLogic.createTransaction>[1]): Promise<DbResponse> => {
     try {
+      validateTransactionInput(data as unknown as Record<string, unknown>);
       const result = txnLogic.createTransaction(getDatabase(), data);
       return { success: true, data: result };
     } catch (error) {
@@ -46,6 +48,7 @@ export function registerTransactionHandlers(): void {
 
   ipcMain.handle('db:transactions:update', async (_, id: string, data: Parameters<typeof txnLogic.updateTransaction>[2]): Promise<DbResponse> => {
     try {
+      validateTransactionInput(data as unknown as Record<string, unknown>, true);
       const result = txnLogic.updateTransaction(getDatabase(), id, data);
       return { success: true, data: result };
     } catch (error) {

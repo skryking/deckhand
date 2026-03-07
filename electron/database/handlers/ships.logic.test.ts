@@ -4,13 +4,10 @@ import { createTestDatabase, type TestDB } from '../db-test-utils';
 import * as schema from '../schema';
 import {
   createShip,
-  findShipById,
   findAllShips,
   updateShip,
   deleteShip,
-  searchShips,
   getShipCurrentLocation,
-  getShipLocationHistory,
 } from './ships.logic';
 
 let db: TestDB;
@@ -126,7 +123,8 @@ describe('deleteShip', () => {
 
     deleteShip(db, ship.id);
 
-    expect(findShipById(db, ship.id)).toBeNull();
+    const remaining = db.select().from(schema.ships).where(eq(schema.ships.id, ship.id)).all();
+    expect(remaining).toHaveLength(0);
     const txns = db.select().from(schema.transactions)
       .where(eq(schema.transactions.shipId, ship.id)).all();
     expect(txns).toHaveLength(0);
@@ -141,14 +139,6 @@ describe('query operations', () => {
     expect(findAllShips(db)).toHaveLength(2);
   });
 
-  it('search finds by model, manufacturer, and nickname', () => {
-    createShip(db, { manufacturer: 'RSI', model: 'Aurora MR', nickname: 'Starlight' });
-    createShip(db, { manufacturer: 'MISC', model: 'Freelancer' });
-
-    expect(searchShips(db, 'aurora')).toHaveLength(1);
-    expect(searchShips(db, 'MISC')).toHaveLength(1);
-    expect(searchShips(db, 'starlight')).toHaveLength(1);
-  });
 });
 
 describe('location tracking', () => {
@@ -173,30 +163,6 @@ describe('location tracking', () => {
     const current = getShipCurrentLocation(db, ship.id);
     expect(current).toBeTruthy();
     expect(current!.locationName).toBe('ArcCorp');
-  });
-
-  it('getLocationHistory returns ordered history', () => {
-    const ship = createShip(db, { manufacturer: 'RSI', model: 'Aurora MR' });
-    const loc1 = db.insert(schema.locations).values({ name: 'Port Olisar' }).returning().get();
-    const loc2 = db.insert(schema.locations).values({ name: 'ArcCorp' }).returning().get();
-
-    db.insert(schema.journalEntries).values({
-      content: 'First stop',
-      shipId: ship.id,
-      locationId: loc1.id,
-      timestamp: new Date('2024-01-01'),
-    }).run();
-    db.insert(schema.journalEntries).values({
-      content: 'Second stop',
-      shipId: ship.id,
-      locationId: loc2.id,
-      timestamp: new Date('2024-01-02'),
-    }).run();
-
-    const history = getShipLocationHistory(db, ship.id);
-    expect(history).toHaveLength(2);
-    expect(history[0].locationName).toBe('ArcCorp'); // most recent first
-    expect(history[1].locationName).toBe('Port Olisar');
   });
 
   it('returns null for ship with no location entries', () => {

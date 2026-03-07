@@ -15,26 +15,6 @@ export function registerCargoHandlers(): void {
     }
   });
 
-  ipcMain.handle('db:cargo:findById', async (_, id: string): Promise<DbResponse> => {
-    try {
-      const result = cargoLogic.findCargoRunById(getDatabase(), id);
-      return { success: true, data: result };
-    } catch (error) {
-      console.error('[Cargo] findById error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  ipcMain.handle('db:cargo:findByStatus', async (_, status: string): Promise<DbResponse> => {
-    try {
-      const results = cargoLogic.findCargoRunsByStatus(getDatabase(), status);
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Cargo] findByStatus error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
   ipcMain.handle('db:cargo:create', async (_, data: Parameters<typeof cargoLogic.createCargoRun>[1]): Promise<DbResponse> => {
     try {
       validateCargoRunInput(data as unknown as Record<string, unknown>);
@@ -73,16 +53,6 @@ export function registerCargoHandlers(): void {
       return { success: true };
     } catch (error) {
       console.error('[Cargo] delete error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  ipcMain.handle('db:cargo:search', async (_, query: string): Promise<DbResponse> => {
-    try {
-      const results = cargoLogic.searchCargoRuns(getDatabase(), query);
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Cargo] search error:', error);
       return { success: false, error: String(error) };
     }
   });

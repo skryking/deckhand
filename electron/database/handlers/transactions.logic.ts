@@ -1,4 +1,4 @@
-import { eq, desc, and, gte, lte, sql } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { TestDB } from '../db-test-utils';
 
@@ -13,29 +13,6 @@ export function findAllTransactions(db: DB, options?: { limit?: number; offset?:
     query = query.offset(options.offset) as typeof query;
   }
   return query.all();
-}
-
-export function findTransactionsByCategory(db: DB, category: string) {
-  return db
-    .select()
-    .from(schema.transactions)
-    .where(eq(schema.transactions.category, category))
-    .orderBy(desc(schema.transactions.timestamp))
-    .all();
-}
-
-export function findTransactionsByDateRange(db: DB, startDate: number, endDate: number) {
-  return db
-    .select()
-    .from(schema.transactions)
-    .where(
-      and(
-        gte(schema.transactions.timestamp, new Date(startDate)),
-        lte(schema.transactions.timestamp, new Date(endDate))
-      )
-    )
-    .orderBy(desc(schema.transactions.timestamp))
-    .all();
 }
 
 export function createTransaction(db: DB, data: typeof schema.transactions.$inferInsert) {
@@ -71,19 +48,3 @@ export function getBalance(db: DB) {
   return result?.total || 0;
 }
 
-export function getBalanceByCategory(db: DB) {
-  const results = db
-    .select({
-      category: schema.transactions.category,
-      total: sql<number>`SUM(${schema.transactions.amount})`,
-    })
-    .from(schema.transactions)
-    .groupBy(schema.transactions.category)
-    .all();
-
-  const categoryTotals: Record<string, number> = {};
-  for (const row of results) {
-    categoryTotals[row.category] = row.total || 0;
-  }
-  return categoryTotals;
-}

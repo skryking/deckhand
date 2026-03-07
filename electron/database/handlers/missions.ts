@@ -15,36 +15,6 @@ export function registerMissionHandlers(): void {
     }
   });
 
-  ipcMain.handle('db:missions:findById', async (_, id: string): Promise<DbResponse> => {
-    try {
-      const result = missionsLogic.findMissionById(getDatabase(), id);
-      return { success: true, data: result };
-    } catch (error) {
-      console.error('[Missions] findById error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  ipcMain.handle('db:missions:findByStatus', async (_, status: string): Promise<DbResponse> => {
-    try {
-      const results = missionsLogic.findMissionsByStatus(getDatabase(), status);
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Missions] findByStatus error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  ipcMain.handle('db:missions:getActive', async (): Promise<DbResponse> => {
-    try {
-      const results = missionsLogic.getActiveMissions(getDatabase());
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Missions] getActive error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
   ipcMain.handle('db:missions:create', async (_, data: Parameters<typeof missionsLogic.createMission>[1]): Promise<DbResponse> => {
     try {
       validateMissionInput(data as unknown as Record<string, unknown>);
@@ -83,16 +53,6 @@ export function registerMissionHandlers(): void {
       return { success: true };
     } catch (error) {
       console.error('[Missions] delete error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  ipcMain.handle('db:missions:search', async (_, query: string): Promise<DbResponse> => {
-    try {
-      const results = missionsLogic.searchMissions(getDatabase(), query);
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Missions] search error:', error);
       return { success: false, error: String(error) };
     }
   });

@@ -15,11 +15,6 @@ export function findAllSessions(db: DB, options?: { limit?: number; offset?: num
   return query.all();
 }
 
-export function findSessionById(db: DB, id: string) {
-  const results = db.select().from(schema.sessions).where(eq(schema.sessions.id, id)).all();
-  return results[0] || null;
-}
-
 export function getActiveSession(db: DB) {
   const results = db
     .select()

@@ -4,11 +4,8 @@ import * as schema from '../schema';
 import {
   createLocation,
   findLocationById,
-  findLocationsByParentId,
-  getFavoriteLocations,
   updateLocation,
   deleteLocation,
-  searchLocations,
   incrementVisit,
   getShipsAtLocation,
 } from './locations.logic';
@@ -42,37 +39,6 @@ describe('CRUD operations', () => {
   });
 });
 
-describe('findByParentId', () => {
-  it('returns root locations when parentId is null', () => {
-    createLocation(db, { name: 'Stanton', type: 'system' });
-    createLocation(db, { name: 'Pyro', type: 'system' });
-
-    const roots = findLocationsByParentId(db, null);
-    expect(roots).toHaveLength(2);
-  });
-
-  it('returns children for a given parent', () => {
-    const system = createLocation(db, { name: 'Stanton', type: 'system' });
-    createLocation(db, { name: 'Hurston', type: 'planet', parentId: system.id });
-    createLocation(db, { name: 'Crusader', type: 'planet', parentId: system.id });
-    createLocation(db, { name: 'Pyro', type: 'system' }); // different parent
-
-    const children = findLocationsByParentId(db, system.id);
-    expect(children).toHaveLength(2);
-  });
-});
-
-describe('getFavorites', () => {
-  it('returns only favorite locations', () => {
-    createLocation(db, { name: 'Port Olisar', isFavorite: true });
-    createLocation(db, { name: 'GrimHEX', isFavorite: false });
-
-    const favs = getFavoriteLocations(db);
-    expect(favs).toHaveLength(1);
-    expect(favs[0].name).toBe('Port Olisar');
-  });
-});
-
 describe('incrementVisit', () => {
   it('increments visit count and sets firstVisitedAt on first visit', () => {
     const loc = createLocation(db, { name: 'Port Olisar' });
@@ -96,16 +62,6 @@ describe('incrementVisit', () => {
 
   it('returns null for non-existent location', () => {
     expect(incrementVisit(db, 'nonexistent')).toBeNull();
-  });
-});
-
-describe('searchLocations', () => {
-  it('searches by name and type', () => {
-    createLocation(db, { name: 'Port Olisar', type: 'station' });
-    createLocation(db, { name: 'ArcCorp Mining', type: 'outpost' });
-
-    expect(searchLocations(db, 'port')).toHaveLength(1);
-    expect(searchLocations(db, 'station')).toHaveLength(1);
   });
 });
 

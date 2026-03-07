@@ -15,26 +15,6 @@ export function registerTransactionHandlers(): void {
     }
   });
 
-  ipcMain.handle('db:transactions:findByCategory', async (_, category: string): Promise<DbResponse> => {
-    try {
-      const results = txnLogic.findTransactionsByCategory(getDatabase(), category);
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Transactions] findByCategory error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  ipcMain.handle('db:transactions:findByDateRange', async (_, startDate: number, endDate: number): Promise<DbResponse> => {
-    try {
-      const results = txnLogic.findTransactionsByDateRange(getDatabase(), startDate, endDate);
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Transactions] findByDateRange error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
   ipcMain.handle('db:transactions:create', async (_, data: Parameters<typeof txnLogic.createTransaction>[1]): Promise<DbResponse> => {
     try {
       validateTransactionInput(data as unknown as Record<string, unknown>);
@@ -73,16 +53,6 @@ export function registerTransactionHandlers(): void {
       return { success: true, data: total };
     } catch (error) {
       console.error('[Transactions] getBalance error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  ipcMain.handle('db:transactions:getBalanceByCategory', async (): Promise<DbResponse> => {
-    try {
-      const categoryTotals = txnLogic.getBalanceByCategory(getDatabase());
-      return { success: true, data: categoryTotals };
-    } catch (error) {
-      console.error('[Transactions] getBalanceByCategory error:', error);
       return { success: false, error: String(error) };
     }
   });

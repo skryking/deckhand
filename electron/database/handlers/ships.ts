@@ -15,16 +15,6 @@ export function registerShipHandlers(): void {
     }
   });
 
-  ipcMain.handle('db:ships:findById', async (_, id: string): Promise<DbResponse> => {
-    try {
-      const result = shipsLogic.findShipById(getDatabase(), id);
-      return { success: true, data: result };
-    } catch (error) {
-      console.error('[Ships] findById error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
   ipcMain.handle('db:ships:create', async (_, data: Parameters<typeof shipsLogic.createShip>[1]): Promise<DbResponse> => {
     try {
       validateShipInput(data as unknown as Record<string, unknown>);
@@ -57,32 +47,12 @@ export function registerShipHandlers(): void {
     }
   });
 
-  ipcMain.handle('db:ships:search', async (_, query: string): Promise<DbResponse> => {
-    try {
-      const results = shipsLogic.searchShips(getDatabase(), query);
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Ships] search error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
   ipcMain.handle('db:ships:getCurrentLocation', async (_, shipId: string): Promise<DbResponse> => {
     try {
       const result = shipsLogic.getShipCurrentLocation(getDatabase(), shipId);
       return { success: true, data: result };
     } catch (error) {
       console.error('[Ships] getCurrentLocation error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  ipcMain.handle('db:ships:getLocationHistory', async (_, shipId: string): Promise<DbResponse> => {
-    try {
-      const results = shipsLogic.getShipLocationHistory(getDatabase(), shipId);
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Ships] getLocationHistory error:', error);
       return { success: false, error: String(error) };
     }
   });

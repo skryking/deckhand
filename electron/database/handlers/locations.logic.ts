@@ -1,4 +1,4 @@
-import { eq, like, or, isNull, and, isNotNull, desc } from 'drizzle-orm';
+import { eq, and, isNotNull, desc } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { TestDB } from '../db-test-utils';
 
@@ -11,16 +11,6 @@ export function findAllLocations(db: DB) {
 export function findLocationById(db: DB, id: string) {
   const results = db.select().from(schema.locations).where(eq(schema.locations.id, id)).all();
   return results[0] || null;
-}
-
-export function findLocationsByParentId(db: DB, parentId: string | null) {
-  return parentId
-    ? db.select().from(schema.locations).where(eq(schema.locations.parentId, parentId)).all()
-    : db.select().from(schema.locations).where(isNull(schema.locations.parentId)).all();
-}
-
-export function getFavoriteLocations(db: DB) {
-  return db.select().from(schema.locations).where(eq(schema.locations.isFavorite, true)).all();
 }
 
 export function createLocation(db: DB, data: typeof schema.locations.$inferInsert) {
@@ -38,21 +28,6 @@ export function updateLocation(db: DB, id: string, data: Partial<typeof schema.l
 
 export function deleteLocation(db: DB, id: string) {
   db.delete(schema.locations).where(eq(schema.locations.id, id)).run();
-}
-
-export function searchLocations(db: DB, query: string) {
-  const escaped = query.replace(/[%_]/g, '\\$&');
-  const searchTerm = `%${escaped}%`;
-  return db
-    .select()
-    .from(schema.locations)
-    .where(
-      or(
-        like(schema.locations.name, searchTerm),
-        like(schema.locations.type, searchTerm)
-      )
-    )
-    .all();
 }
 
 export function incrementVisit(db: DB, id: string) {

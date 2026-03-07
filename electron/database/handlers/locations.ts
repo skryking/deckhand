@@ -25,26 +25,6 @@ export function registerLocationHandlers(): void {
     }
   });
 
-  ipcMain.handle('db:locations:findByParentId', async (_, parentId: string | null): Promise<DbResponse> => {
-    try {
-      const results = locationsLogic.findLocationsByParentId(getDatabase(), parentId);
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Locations] findByParentId error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  ipcMain.handle('db:locations:getFavorites', async (): Promise<DbResponse> => {
-    try {
-      const results = locationsLogic.getFavoriteLocations(getDatabase());
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Locations] getFavorites error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
   ipcMain.handle('db:locations:create', async (_, data: Parameters<typeof locationsLogic.createLocation>[1]): Promise<DbResponse> => {
     try {
       validateLocationInput(data as unknown as Record<string, unknown>);
@@ -73,16 +53,6 @@ export function registerLocationHandlers(): void {
       return { success: true };
     } catch (error) {
       console.error('[Locations] delete error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  ipcMain.handle('db:locations:search', async (_, query: string): Promise<DbResponse> => {
-    try {
-      const results = locationsLogic.searchLocations(getDatabase(), query);
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Locations] search error:', error);
       return { success: false, error: String(error) };
     }
   });

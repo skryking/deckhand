@@ -1,4 +1,4 @@
-import { eq, like, or, desc } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { TestDB } from '../db-test-utils';
 
@@ -13,29 +13,6 @@ export function findAllMissions(db: DB, options?: { limit?: number; offset?: num
     query = query.offset(options.offset) as typeof query;
   }
   return query.all();
-}
-
-export function findMissionById(db: DB, id: string) {
-  const results = db.select().from(schema.missions).where(eq(schema.missions.id, id)).all();
-  return results[0] || null;
-}
-
-export function findMissionsByStatus(db: DB, status: string) {
-  return db
-    .select()
-    .from(schema.missions)
-    .where(eq(schema.missions.status, status))
-    .orderBy(desc(schema.missions.acceptedAt))
-    .all();
-}
-
-export function getActiveMissions(db: DB) {
-  return db
-    .select()
-    .from(schema.missions)
-    .where(eq(schema.missions.status, 'active'))
-    .orderBy(desc(schema.missions.acceptedAt))
-    .all();
 }
 
 export function createMission(db: DB, data: typeof schema.missions.$inferInsert) {
@@ -151,19 +128,3 @@ export function deleteMission(db: DB, id: string) {
   });
 }
 
-export function searchMissions(db: DB, query: string) {
-  const escaped = query.replace(/[%_]/g, '\\$&');
-  const searchTerm = `%${escaped}%`;
-  return db
-    .select()
-    .from(schema.missions)
-    .where(
-      or(
-        like(schema.missions.title, searchTerm),
-        like(schema.missions.description, searchTerm),
-        like(schema.missions.contractor, searchTerm)
-      )
-    )
-    .orderBy(desc(schema.missions.acceptedAt))
-    .all();
-}

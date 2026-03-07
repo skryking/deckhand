@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { eq, like, desc } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { getDatabase, schema } from '../index';
 import type { DbResponse, QueryOptions } from '../../../src/types/database';
 
@@ -21,35 +21,6 @@ export function registerScreenshotHandlers(): void {
       return { success: true, data: results };
     } catch (error) {
       console.error('[Screenshots] findAll error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  // Get screenshot by ID
-  ipcMain.handle('db:screenshots:findById', async (_, id: string): Promise<DbResponse> => {
-    try {
-      const db = getDatabase();
-      const results = db.select().from(schema.screenshots).where(eq(schema.screenshots.id, id)).all();
-      return { success: true, data: results[0] || null };
-    } catch (error) {
-      console.error('[Screenshots] findById error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  // Get favorite screenshots
-  ipcMain.handle('db:screenshots:getFavorites', async (): Promise<DbResponse> => {
-    try {
-      const db = getDatabase();
-      const results = db
-        .select()
-        .from(schema.screenshots)
-        .where(eq(schema.screenshots.isFavorite, true))
-        .orderBy(desc(schema.screenshots.takenAt))
-        .all();
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Screenshots] getFavorites error:', error);
       return { success: false, error: String(error) };
     }
   });
@@ -142,25 +113,6 @@ export function registerScreenshotHandlers(): void {
       return { success: true };
     } catch (error) {
       console.error('[Screenshots] delete error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  // Search screenshots by caption
-  ipcMain.handle('db:screenshots:search', async (_, query: string): Promise<DbResponse> => {
-    try {
-      const db = getDatabase();
-      const escaped = query.replace(/[%_]/g, '\\$&');
-      const searchTerm = `%${escaped}%`;
-      const results = db
-        .select()
-        .from(schema.screenshots)
-        .where(like(schema.screenshots.caption, searchTerm))
-        .orderBy(desc(schema.screenshots.takenAt))
-        .all();
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Screenshots] search error:', error);
       return { success: false, error: String(error) };
     }
   });

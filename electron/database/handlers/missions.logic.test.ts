@@ -4,13 +4,9 @@ import { createTestDatabase, type TestDB } from '../db-test-utils';
 import * as schema from '../schema';
 import {
   createMission,
-  findMissionById,
-  findMissionsByStatus,
-  getActiveMissions,
   updateMission,
   completeMission,
   deleteMission,
-  searchMissions,
 } from './missions.logic';
 
 let db: TestDB;
@@ -170,35 +166,11 @@ describe('deleteMission', () => {
 
     deleteMission(db, mission.id);
 
-    expect(findMissionById(db, mission.id)).toBeNull();
+    const rows = db.select().from(schema.missions)
+      .where(eq(schema.missions.id, mission.id)).all();
+    expect(rows).toHaveLength(0);
     const txns = db.select().from(schema.transactions)
       .where(eq(schema.transactions.missionId, mission.id)).all();
     expect(txns).toHaveLength(0);
-  });
-});
-
-describe('query operations', () => {
-  it('findByStatus filters correctly', () => {
-    createMission(db, { title: 'A', status: 'active' });
-    createMission(db, { title: 'B', status: 'completed', completedAt: new Date() });
-
-    expect(findMissionsByStatus(db, 'active')).toHaveLength(1);
-    expect(findMissionsByStatus(db, 'completed')).toHaveLength(1);
-  });
-
-  it('getActive returns only active missions', () => {
-    createMission(db, { title: 'A', status: 'active' });
-    createMission(db, { title: 'B', status: 'completed', completedAt: new Date() });
-    createMission(db, { title: 'C', status: 'active' });
-
-    expect(getActiveMissions(db)).toHaveLength(2);
-  });
-
-  it('search finds by title, description, and contractor', () => {
-    createMission(db, { title: 'Bounty Hunt', contractor: 'Miles Eckhart' });
-    createMission(db, { title: 'Delivery', description: 'Deliver bounty supplies' });
-
-    expect(searchMissions(db, 'bounty')).toHaveLength(2);
-    expect(searchMissions(db, 'eckhart')).toHaveLength(1);
   });
 });

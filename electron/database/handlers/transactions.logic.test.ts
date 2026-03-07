@@ -3,11 +3,9 @@ import { createTestDatabase, type TestDB } from '../db-test-utils';
 import {
   createTransaction,
   findAllTransactions,
-  findTransactionsByCategory,
   updateTransaction,
   deleteTransaction,
   getBalance,
-  getBalanceByCategory,
 } from './transactions.logic';
 
 let db: TestDB;
@@ -69,31 +67,6 @@ describe('getBalance', () => {
     createTransaction(db, { amount: 1000, category: 'cargo', timestamp: new Date() });
 
     expect(getBalance(db)).toBe(4000);
-  });
-});
-
-describe('getBalanceByCategory', () => {
-  it('groups totals by category', () => {
-    createTransaction(db, { amount: 5000, category: 'mission', timestamp: new Date() });
-    createTransaction(db, { amount: 3000, category: 'mission', timestamp: new Date() });
-    createTransaction(db, { amount: -2000, category: 'repair', timestamp: new Date() });
-    createTransaction(db, { amount: 1000, category: 'cargo', timestamp: new Date() });
-
-    const result = getBalanceByCategory(db);
-    expect(result.mission).toBe(8000);
-    expect(result.repair).toBe(-2000);
-    expect(result.cargo).toBe(1000);
-  });
-});
-
-describe('findByCategory', () => {
-  it('filters by category', () => {
-    createTransaction(db, { amount: 5000, category: 'mission', timestamp: new Date() });
-    createTransaction(db, { amount: -2000, category: 'repair', timestamp: new Date() });
-
-    const missions = findTransactionsByCategory(db, 'mission');
-    expect(missions).toHaveLength(1);
-    expect(missions[0].amount).toBe(5000);
   });
 });
 

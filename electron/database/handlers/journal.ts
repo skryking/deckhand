@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { eq, like, or, desc, count } from 'drizzle-orm';
+import { eq, desc, count } from 'drizzle-orm';
 import { getDatabase, schema } from '../index';
 import type { DbResponse, QueryOptions } from '../../../src/types/database';
 
@@ -21,52 +21,6 @@ export function registerJournalHandlers(): void {
       return { success: true, data: results };
     } catch (error) {
       console.error('[Journal] findAll error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  // Get journal entry by ID
-  ipcMain.handle('db:journal:findById', async (_, id: string): Promise<DbResponse> => {
-    try {
-      const db = getDatabase();
-      const results = db.select().from(schema.journalEntries).where(eq(schema.journalEntries.id, id)).all();
-      return { success: true, data: results[0] || null };
-    } catch (error) {
-      console.error('[Journal] findById error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  // Get entries by type
-  ipcMain.handle('db:journal:findByType', async (_, entryType: string): Promise<DbResponse> => {
-    try {
-      const db = getDatabase();
-      const results = db
-        .select()
-        .from(schema.journalEntries)
-        .where(eq(schema.journalEntries.entryType, entryType))
-        .orderBy(desc(schema.journalEntries.timestamp))
-        .all();
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Journal] findByType error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  // Get favorite entries
-  ipcMain.handle('db:journal:getFavorites', async (): Promise<DbResponse> => {
-    try {
-      const db = getDatabase();
-      const results = db
-        .select()
-        .from(schema.journalEntries)
-        .where(eq(schema.journalEntries.isFavorite, true))
-        .orderBy(desc(schema.journalEntries.timestamp))
-        .all();
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Journal] getFavorites error:', error);
       return { success: false, error: String(error) };
     }
   });
@@ -108,30 +62,6 @@ export function registerJournalHandlers(): void {
       return { success: true };
     } catch (error) {
       console.error('[Journal] delete error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  // Search journal entries
-  ipcMain.handle('db:journal:search', async (_, query: string): Promise<DbResponse> => {
-    try {
-      const db = getDatabase();
-      const escaped = query.replace(/[%_]/g, '\\$&');
-      const searchTerm = `%${escaped}%`;
-      const results = db
-        .select()
-        .from(schema.journalEntries)
-        .where(
-          or(
-            like(schema.journalEntries.title, searchTerm),
-            like(schema.journalEntries.content, searchTerm)
-          )
-        )
-        .orderBy(desc(schema.journalEntries.timestamp))
-        .all();
-      return { success: true, data: results };
-    } catch (error) {
-      console.error('[Journal] search error:', error);
       return { success: false, error: String(error) };
     }
   });

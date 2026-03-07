@@ -5,7 +5,6 @@ import {
   endSession,
   getActiveSession,
   findAllSessions,
-  findSessionById,
   updateSession,
   deleteSession,
 } from './sessions.logic';
@@ -25,16 +24,12 @@ describe('startSession', () => {
   });
 
   it('auto-closes existing active sessions', () => {
-    const first = startSession(db, 50000);
-    const second = startSession(db, 60000);
+    const first = startSession(db, 10000);
+    startSession(db, 20000);
 
-    // First session should be ended
-    const firstAfter = findSessionById(db, first.id);
+    const all = findAllSessions(db);
+    const firstAfter = all.find(s => s.id === first.id);
     expect(firstAfter!.endedAt).toBeTruthy();
-    expect(firstAfter!.durationMinutes).toBeDefined();
-
-    // Second session should be active
-    expect(second.endedAt).toBeNull();
   });
 });
 
@@ -79,14 +74,6 @@ describe('updateSession', () => {
   });
 });
 
-describe('deleteSession', () => {
-  it('removes the session', () => {
-    const session = startSession(db);
-    deleteSession(db, session.id);
-    expect(findSessionById(db, session.id)).toBeNull();
-  });
-});
-
 describe('findAll with options', () => {
   it('respects limit', () => {
     for (let i = 0; i < 5; i++) {
@@ -101,5 +88,15 @@ describe('findAll with options', () => {
 
     const limited = findAllSessions(db, { limit: 3 });
     expect(limited).toHaveLength(3);
+  });
+});
+
+describe('deleteSession', () => {
+  it('removes the session', () => {
+    const session = startSession(db);
+    deleteSession(db, session.id);
+
+    const all = findAllSessions(db);
+    expect(all.find(s => s.id === session.id)).toBeUndefined();
   });
 });

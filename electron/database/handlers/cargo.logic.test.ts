@@ -5,12 +5,9 @@ import * as schema from '../schema';
 import {
   createCargoRun,
   findAllCargoRuns,
-  findCargoRunById,
-  findCargoRunsByStatus,
   updateCargoRun,
   completeCargoRun,
   deleteCargoRun,
-  searchCargoRuns,
 } from './cargo.logic';
 
 let db: TestDB;
@@ -225,7 +222,8 @@ describe('deleteCargoRun', () => {
 
     deleteCargoRun(db, run.id);
 
-    expect(findCargoRunById(db, run.id)).toBeNull();
+    const runs = findAllCargoRuns(db);
+    expect(runs.find(r => r.id === run.id)).toBeUndefined();
     const txns = db.select().from(schema.transactions)
       .where(eq(schema.transactions.cargoRunId, run.id)).all();
     expect(txns).toHaveLength(0);
@@ -239,23 +237,5 @@ describe('query operations', () => {
 
     const all = findAllCargoRuns(db);
     expect(all).toHaveLength(2);
-  });
-
-  it('findByStatus filters correctly', () => {
-    createCargoRun(db, { commodity: 'A', quantity: 1, buyPrice: 10, startedAt: new Date(), status: 'in_progress' });
-    createCargoRun(db, { commodity: 'B', quantity: 2, buyPrice: 20, startedAt: new Date(), status: 'completed', sellPrice: 30, completedAt: new Date() });
-
-    const inProgress = findCargoRunsByStatus(db, 'in_progress');
-    expect(inProgress).toHaveLength(1);
-    expect(inProgress[0].commodity).toBe('A');
-  });
-
-  it('search finds by commodity', () => {
-    createCargoRun(db, { commodity: 'Laranite', quantity: 1, buyPrice: 10, startedAt: new Date() });
-    createCargoRun(db, { commodity: 'Titanium', quantity: 2, buyPrice: 20, startedAt: new Date() });
-
-    const results = searchCargoRuns(db, 'laran');
-    expect(results).toHaveLength(1);
-    expect(results[0].commodity).toBe('Laranite');
   });
 });

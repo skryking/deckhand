@@ -1,4 +1,4 @@
-import { eq, and, lt, gte, like, desc } from 'drizzle-orm';
+import { eq, and, lt, gte, desc } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { TestDB } from '../db-test-utils';
 
@@ -13,20 +13,6 @@ export function findAllCargoRuns(db: DB, options?: { limit?: number; offset?: nu
     query = query.offset(options.offset) as typeof query;
   }
   return query.all();
-}
-
-export function findCargoRunById(db: DB, id: string) {
-  const results = db.select().from(schema.cargoRuns).where(eq(schema.cargoRuns.id, id)).all();
-  return results[0] || null;
-}
-
-export function findCargoRunsByStatus(db: DB, status: string) {
-  return db
-    .select()
-    .from(schema.cargoRuns)
-    .where(eq(schema.cargoRuns.status, status))
-    .orderBy(desc(schema.cargoRuns.startedAt))
-    .all();
 }
 
 export function createCargoRun(db: DB, data: typeof schema.cargoRuns.$inferInsert) {
@@ -183,13 +169,3 @@ export function deleteCargoRun(db: DB, id: string) {
   });
 }
 
-export function searchCargoRuns(db: DB, query: string) {
-  const escaped = query.replace(/[%_]/g, '\\$&');
-  const searchTerm = `%${escaped}%`;
-  return db
-    .select()
-    .from(schema.cargoRuns)
-    .where(like(schema.cargoRuns.commodity, searchTerm))
-    .orderBy(desc(schema.cargoRuns.startedAt))
-    .all();
-}

@@ -1,4 +1,4 @@
-import { eq, like, or, and, isNotNull, desc } from 'drizzle-orm';
+import { eq, and, isNotNull, desc } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { TestDB } from '../db-test-utils';
 
@@ -6,11 +6,6 @@ type DB = TestDB;
 
 export function findAllShips(db: DB) {
   return db.select().from(schema.ships).all();
-}
-
-export function findShipById(db: DB, id: string) {
-  const results = db.select().from(schema.ships).where(eq(schema.ships.id, id)).all();
-  return results[0] || null;
 }
 
 export function createShip(db: DB, data: typeof schema.ships.$inferInsert) {
@@ -85,22 +80,6 @@ export function deleteShip(db: DB, id: string) {
   });
 }
 
-export function searchShips(db: DB, query: string) {
-  const escaped = query.replace(/[%_]/g, '\\$&');
-  const searchTerm = `%${escaped}%`;
-  return db
-    .select()
-    .from(schema.ships)
-    .where(
-      or(
-        like(schema.ships.model, searchTerm),
-        like(schema.ships.manufacturer, searchTerm),
-        like(schema.ships.nickname, searchTerm)
-      )
-    )
-    .all();
-}
-
 export function getShipCurrentLocation(db: DB, shipId: string) {
   const result = db
     .select({
@@ -122,23 +101,3 @@ export function getShipCurrentLocation(db: DB, shipId: string) {
   return result || null;
 }
 
-export function getShipLocationHistory(db: DB, shipId: string) {
-  return db
-    .select({
-      locationId: schema.journalEntries.locationId,
-      locationName: schema.locations.name,
-      timestamp: schema.journalEntries.timestamp,
-      entryId: schema.journalEntries.id,
-      entryTitle: schema.journalEntries.title,
-    })
-    .from(schema.journalEntries)
-    .innerJoin(schema.locations, eq(schema.journalEntries.locationId, schema.locations.id))
-    .where(
-      and(
-        eq(schema.journalEntries.shipId, shipId),
-        isNotNull(schema.journalEntries.locationId)
-      )
-    )
-    .orderBy(desc(schema.journalEntries.timestamp))
-    .all();
-}

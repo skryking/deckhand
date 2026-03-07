@@ -14,16 +14,6 @@ export function registerSessionHandlers(): void {
     }
   });
 
-  ipcMain.handle('db:sessions:findById', async (_, id: string): Promise<DbResponse> => {
-    try {
-      const result = sessionsLogic.findSessionById(getDatabase(), id);
-      return { success: true, data: result };
-    } catch (error) {
-      console.error('[Sessions] findById error:', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
   ipcMain.handle('db:sessions:getActive', async (): Promise<DbResponse> => {
     try {
       const result = sessionsLogic.getActiveSession(getDatabase());

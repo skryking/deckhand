@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Image, Upload, Star } from 'lucide-react'
+import { Image, Upload, Star, X, Pencil, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button, SearchInput, StatCard, Modal, ModalFooter } from '../components/ui'
 import { ScreenshotCard, ScreenshotModal } from '../components/gallery'
 import { useScreenshots, useShips, useLocations } from '../lib/db'
@@ -23,6 +23,7 @@ export function GalleryView() {
   const [searchQuery, setSearchQuery] = useState('')
   const [galleryFilter, setGalleryFilter] = useState<GalleryFilter>('all')
   const [deleteConfirm, setDeleteConfirm] = useState<Screenshot | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
   // Name lookup maps
   const locationNames = useMemo(() => {
@@ -224,7 +225,7 @@ export function GalleryView() {
                   screenshot={screenshot}
                   locationName={screenshot.locationId ? locationNames[screenshot.locationId] : undefined}
                   shipName={screenshot.shipId ? shipNames[screenshot.shipId] : undefined}
-                  onClick={() => handleEdit(screenshot)}
+                  onClick={() => setLightboxIndex(filteredScreenshots.indexOf(screenshot))}
                 />
               ))}
             </div>
@@ -242,6 +243,71 @@ export function GalleryView() {
           </>
         )}
       </main>
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && filteredScreenshots[lightboxIndex] && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-void/90 backdrop-blur-sm"
+          onClick={() => setLightboxIndex(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-text-muted hover:text-text-primary transition-colors"
+            onClick={() => setLightboxIndex(null)}
+            title="Close"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <button
+            className="absolute top-4 right-14 text-text-muted hover:text-text-primary transition-colors"
+            onClick={(e) => {
+              e.stopPropagation()
+              handleEdit(filteredScreenshots[lightboxIndex])
+              setLightboxIndex(null)
+            }}
+            title="Edit screenshot"
+          >
+            <Pencil className="w-5 h-5" />
+          </button>
+          <img
+            src={`local-file:///${filteredScreenshots[lightboxIndex].filePath.replace(/\\/g, '/')}`}
+            alt={filteredScreenshots[lightboxIndex].caption || 'Screenshot'}
+            className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+          {filteredScreenshots.length > 1 && (
+            <>
+              {lightboxIndex > 0 && (
+                <button
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-panel/80 border border-subtle text-text-muted hover:text-text-primary flex items-center justify-center transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setLightboxIndex(lightboxIndex - 1)
+                  }}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+              )}
+              {lightboxIndex < filteredScreenshots.length - 1 && (
+                <button
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-panel/80 border border-subtle text-text-muted hover:text-text-primary flex items-center justify-center transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setLightboxIndex(lightboxIndex + 1)
+                  }}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              )}
+            </>
+          )}
+          <div className="absolute bottom-4 text-xs text-text-muted">
+            {lightboxIndex + 1} / {filteredScreenshots.length}
+            {filteredScreenshots[lightboxIndex].caption && (
+              <span className="ml-3 text-text-secondary">{filteredScreenshots[lightboxIndex].caption}</span>
+            )}
+          </div>
+        </div>
+      )}
 
       <ScreenshotModal
         isOpen={isModalOpen}

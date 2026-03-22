@@ -1,4 +1,4 @@
-import { eq, and, isNotNull, desc } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { TestDB } from '../db-test-utils';
 
@@ -81,23 +81,23 @@ export function deleteShip(db: DB, id: string) {
 }
 
 export function getShipCurrentLocation(db: DB, shipId: string) {
-  const result = db
-    .select({
-      locationId: schema.journalEntries.locationId,
-      locationName: schema.locations.name,
-      timestamp: schema.journalEntries.timestamp,
-    })
-    .from(schema.journalEntries)
-    .innerJoin(schema.locations, eq(schema.journalEntries.locationId, schema.locations.id))
-    .where(
-      and(
-        eq(schema.journalEntries.shipId, shipId),
-        isNotNull(schema.journalEntries.locationId)
-      )
+  // Check both journal entries and transactions for the most recent location
+  const result = db.all(sql`
+    SELECT location_id AS locationId, name AS locationName, timestamp
+    FROM (
+      SELECT je.location_id, l.name, je.timestamp
+      FROM journal_entries je
+      INNER JOIN locations l ON je.location_id = l.id
+      WHERE je.ship_id = ${shipId} AND je.location_id IS NOT NULL
+      UNION ALL
+      SELECT t.location_id, l.name, t.timestamp
+      FROM transactions t
+      INNER JOIN locations l ON t.location_id = l.id
+      WHERE t.ship_id = ${shipId} AND t.location_id IS NOT NULL
     )
-    .orderBy(desc(schema.journalEntries.timestamp))
-    .limit(1)
-    .get();
-  return result || null;
+    ORDER BY timestamp DESC
+    LIMIT 1
+  `);
+  return result.length > 0 ? result[0] as { locationId: string; locationName: string; timestamp: Date } : null;
 }
 

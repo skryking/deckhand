@@ -128,6 +128,57 @@ export interface Session {
   createdAt: Date | null;
 }
 
+export interface InventoryItem {
+  id: string;
+  materialName: string;
+  category: string | null;
+  source: string | null;
+  quantityCscu: number;
+  quality: number;
+  locationId: string | null;
+  shipId: string | null;
+  notes: string | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface Blueprint {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string | null;
+  outputQuantity: number | null;
+  obtainedAt: Date | null;
+  locationId: string | null;
+  notes: string | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface BlueprintIngredient {
+  id: string;
+  blueprintId: string;
+  materialName: string;
+  quantityCscu: number;
+  minQuality: number | null;
+  createdAt: Date | null;
+}
+
+export interface IngredientStatus {
+  materialName: string;
+  required: number;
+  available: number;
+  minQuality: number;
+  sufficient: boolean;
+}
+
+export interface BlueprintCraftability {
+  blueprint: Blueprint;
+  ingredients: IngredientStatus[];
+  canCraft: boolean;
+  craftableCount: number;
+}
+
 // ============================================
 // LOCATION TRACKING TYPES
 // ============================================
@@ -181,6 +232,16 @@ export type UpdateScreenshotInput = Partial<CreateScreenshotInput>;
 
 export type CreateSessionInput = Omit<Session, 'id' | 'createdAt'>;
 export type UpdateSessionInput = Partial<CreateSessionInput>;
+
+export type CreateInventoryItemInput = Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt'>;
+export type UpdateInventoryItemInput = Partial<CreateInventoryItemInput>;
+
+export type CreateBlueprintInput = Omit<Blueprint, 'id' | 'createdAt' | 'updatedAt'> & {
+  ingredients?: Omit<BlueprintIngredient, 'id' | 'blueprintId' | 'createdAt'>[];
+};
+export type UpdateBlueprintInput = Partial<Omit<Blueprint, 'id' | 'createdAt' | 'updatedAt'>> & {
+  ingredients?: Omit<BlueprintIngredient, 'id' | 'blueprintId' | 'createdAt'>[];
+};
 
 // ============================================
 // IPC RESPONSE TYPE

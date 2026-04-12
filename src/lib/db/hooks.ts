@@ -8,6 +8,8 @@ import {
   missionsApi,
   screenshotsApi,
   sessionsApi,
+  inventoryApi,
+  blueprintsApi,
 } from './api';
 import type { QueryOptions } from '../../types/database';
 
@@ -176,6 +178,24 @@ export function useScreenshotsByJournalEntry(journalEntryId: string | null) {
     () => (journalEntryId ? screenshotsApi.findByJournalEntry(journalEntryId) : Promise.resolve([])),
     [journalEntryId]
   );
+}
+
+// ============================================
+// INVENTORY HOOKS
+// ============================================
+export function useInventory() {
+  return useFetch(() => inventoryApi.findAll(), []);
+}
+
+// ============================================
+// BLUEPRINTS HOOKS
+// ============================================
+export function useBlueprints() {
+  return useFetch(() => blueprintsApi.findAll(), []);
+}
+
+export function useBlueprintCraftability() {
+  return useFetch(() => blueprintsApi.getCraftability(), []);
 }
 
 // ============================================

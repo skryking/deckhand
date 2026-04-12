@@ -8,6 +8,8 @@ export type NavId =
   | 'ledger'
   | 'cargo'
   | 'jobs'
+  | 'mining'
+  | 'workshop'
   | 'gallery'
   | 'config'
 

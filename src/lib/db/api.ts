@@ -7,6 +7,10 @@ import type {
   Mission,
   Screenshot,
   Session,
+  InventoryItem,
+  Blueprint,
+  BlueprintIngredient,
+  BlueprintCraftability,
   ShipCurrentLocation,
   ShipAtLocation,
   CreateShipInput,
@@ -24,6 +28,10 @@ import type {
   CreateScreenshotInput,
   UpdateScreenshotInput,
   UpdateSessionInput,
+  CreateInventoryItemInput,
+  UpdateInventoryItemInput,
+  CreateBlueprintInput,
+  UpdateBlueprintInput,
   DbResponse,
   QueryOptions,
 } from '../../types/database';
@@ -116,6 +124,31 @@ export const screenshotsApi = {
   create: (data: CreateScreenshotInput) => invoke<Screenshot>('db:screenshots:create', data),
   update: (id: string, data: UpdateScreenshotInput) => invoke<Screenshot>('db:screenshots:update', id, data),
   delete: (id: string) => invoke<void>('db:screenshots:delete', id),
+};
+
+// ============================================
+// INVENTORY API
+// ============================================
+export const inventoryApi = {
+  findAll: () => invoke<InventoryItem[]>('db:inventory:findAll'),
+  findById: (id: string) => invoke<InventoryItem | null>('db:inventory:findById', id),
+  create: (data: CreateInventoryItemInput) => invoke<InventoryItem>('db:inventory:create', data),
+  update: (id: string, data: UpdateInventoryItemInput) => invoke<InventoryItem>('db:inventory:update', id, data),
+  adjustQuantity: (id: string, delta: number) => invoke<InventoryItem>('db:inventory:adjustQuantity', id, delta),
+  delete: (id: string) => invoke<void>('db:inventory:delete', id),
+};
+
+// ============================================
+// BLUEPRINTS API
+// ============================================
+export const blueprintsApi = {
+  findAll: () => invoke<Blueprint[]>('db:blueprints:findAll'),
+  findById: (id: string) => invoke<(Blueprint & { ingredients: BlueprintIngredient[] }) | null>('db:blueprints:findById', id),
+  create: (data: CreateBlueprintInput) => invoke<Blueprint & { ingredients: BlueprintIngredient[] }>('db:blueprints:create', data),
+  update: (id: string, data: UpdateBlueprintInput) => invoke<Blueprint & { ingredients: BlueprintIngredient[] }>('db:blueprints:update', id, data),
+  delete: (id: string) => invoke<void>('db:blueprints:delete', id),
+  getCraftability: () => invoke<BlueprintCraftability[]>('db:blueprints:getCraftability'),
+  getCraftabilityForBlueprint: (id: string) => invoke<BlueprintCraftability | null>('db:blueprints:getCraftabilityForBlueprint', id),
 };
 
 // ============================================

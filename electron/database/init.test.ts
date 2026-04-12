@@ -13,13 +13,16 @@ function getColumnNames(sqlite: Database.Database, table: string): string[] {
 }
 
 describe('createTables', () => {
-  it('creates all 8 tables on a fresh database', () => {
+  it('creates all 11 tables on a fresh database', () => {
     const sqlite = new Database(':memory:');
     createTables(sqlite);
 
     const tables = getTableNames(sqlite);
     expect(tables).toEqual([
+      'blueprint_ingredients',
+      'blueprints',
       'cargo_runs',
+      'inventory',
       'journal_entries',
       'locations',
       'missions',

@@ -6,6 +6,8 @@ import { registerCargoHandlers } from './cargo';
 import { registerMissionHandlers } from './missions';
 import { registerScreenshotHandlers } from './screenshots';
 import { registerSessionHandlers } from './sessions';
+import { registerInventoryHandlers } from './inventory';
+import { registerBlueprintHandlers } from './blueprints';
 
 export function registerDatabaseHandlers(): void {
   registerShipHandlers();
@@ -16,6 +18,8 @@ export function registerDatabaseHandlers(): void {
   registerMissionHandlers();
   registerScreenshotHandlers();
   registerSessionHandlers();
+  registerInventoryHandlers();
+  registerBlueprintHandlers();
 
   console.log('[Database] All IPC handlers registered');
 }

@@ -10,6 +10,8 @@ import {
   LedgerView,
   CargoView,
   JobsView,
+  MiningView,
+  WorkshopView,
   GalleryView,
   ConfigView,
 } from "./views";
@@ -48,6 +50,10 @@ function App() {
         return <CargoView />;
       case "jobs":
         return <JobsView />;
+      case "mining":
+        return <MiningView />;
+      case "workshop":
+        return <WorkshopView />;
       case "gallery":
         return <GalleryView />;
       case "config":

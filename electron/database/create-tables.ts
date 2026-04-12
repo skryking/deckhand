@@ -197,6 +197,52 @@ export function createTables(sqlite: Database.Database): void {
     )
   `);
 
+  // Inventory table (mining & materials)
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS inventory (
+      id TEXT PRIMARY KEY,
+      material_name TEXT NOT NULL,
+      category TEXT,
+      source TEXT,
+      quantity_cscu INTEGER NOT NULL DEFAULT 0,
+      quality INTEGER NOT NULL DEFAULT 0,
+      location_id TEXT,
+      ship_id TEXT,
+      notes TEXT,
+      created_at INTEGER,
+      updated_at INTEGER,
+      UNIQUE(material_name, quality)
+    )
+  `);
+
+  // Blueprints table
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS blueprints (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT,
+      category TEXT,
+      output_quantity INTEGER DEFAULT 1,
+      obtained_at INTEGER,
+      location_id TEXT,
+      notes TEXT,
+      created_at INTEGER,
+      updated_at INTEGER
+    )
+  `);
+
+  // Blueprint ingredients table
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS blueprint_ingredients (
+      id TEXT PRIMARY KEY,
+      blueprint_id TEXT NOT NULL,
+      material_name TEXT NOT NULL,
+      quantity_cscu INTEGER NOT NULL,
+      min_quality INTEGER DEFAULT 0,
+      created_at INTEGER
+    )
+  `);
+
   // Indexes for foreign key columns and commonly queried fields
   sqlite.exec(`
     CREATE INDEX IF NOT EXISTS idx_locations_parent_id ON locations(parent_id);
@@ -218,5 +264,9 @@ export function createTables(sqlite: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_screenshots_location_id ON screenshots(location_id);
     CREATE INDEX IF NOT EXISTS idx_screenshots_journal_entry_id ON screenshots(journal_entry_id);
     CREATE INDEX IF NOT EXISTS idx_sessions_started_at ON sessions(started_at);
+    CREATE INDEX IF NOT EXISTS idx_inventory_material_name ON inventory(material_name);
+    CREATE INDEX IF NOT EXISTS idx_inventory_category ON inventory(category);
+    CREATE INDEX IF NOT EXISTS idx_blueprint_ingredients_blueprint_id ON blueprint_ingredients(blueprint_id);
+    CREATE INDEX IF NOT EXISTS idx_blueprint_ingredients_material_name ON blueprint_ingredients(material_name);
   `);
 }

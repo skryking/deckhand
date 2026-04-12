@@ -85,6 +85,21 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   'db:screenshots:update',
   'db:screenshots:delete',
   'db:screenshots:search',
+  // Database: Inventory
+  'db:inventory:findAll',
+  'db:inventory:findById',
+  'db:inventory:create',
+  'db:inventory:update',
+  'db:inventory:adjustQuantity',
+  'db:inventory:delete',
+  // Database: Blueprints
+  'db:blueprints:findAll',
+  'db:blueprints:findById',
+  'db:blueprints:create',
+  'db:blueprints:update',
+  'db:blueprints:delete',
+  'db:blueprints:getCraftability',
+  'db:blueprints:getCraftabilityForBlueprint',
   // Database: Sessions
   'db:sessions:findAll',
   'db:sessions:findById',

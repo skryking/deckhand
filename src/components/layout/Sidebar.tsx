@@ -6,6 +6,8 @@ import {
   Wallet,
   Package,
   Target,
+  Gem,
+  Hammer,
   Image,
   Settings,
   type LucideIcon,
@@ -29,6 +31,8 @@ const secondaryNavItems: NavItem[] = [
   { id: "ledger", label: "Ledger", icon: Wallet },
   { id: "cargo", label: "Cargo", icon: Package },
   { id: "jobs", label: "Jobs", icon: Target },
+  { id: "mining", label: "Mining", icon: Gem },
+  { id: "workshop", label: "Workshop", icon: Hammer },
   { id: "gallery", label: "Gallery", icon: Image },
 ];
 

@@ -139,6 +139,46 @@ export const sessions = sqliteTable('sessions', {
 });
 
 // ============================================
+// MINING & CRAFTING TABLES
+// ============================================
+
+export const inventory = sqliteTable('inventory', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  materialName: text('material_name').notNull(),
+  category: text('category'), // 'mineral', 'gem', 'component', 'salvage', 'other'
+  source: text('source'), // 'mined', 'purchased', 'salvaged', 'other'
+  quantityCscu: integer('quantity_cscu').notNull().default(0),
+  quality: integer('quality').notNull().default(0), // 0-1000 scale
+  locationId: text('location_id'),
+  shipId: text('ship_id'),
+  notes: text('notes'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+export const blueprints = sqliteTable('blueprints', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  description: text('description'),
+  category: text('category'), // 'weapon', 'armor', 'component', 'consumable', 'other'
+  outputQuantity: integer('output_quantity').default(1),
+  obtainedAt: integer('obtained_at', { mode: 'timestamp' }),
+  locationId: text('location_id'),
+  notes: text('notes'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+export const blueprintIngredients = sqliteTable('blueprint_ingredients', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  blueprintId: text('blueprint_id').notNull(),
+  materialName: text('material_name').notNull(),
+  quantityCscu: integer('quantity_cscu').notNull(),
+  minQuality: integer('min_quality').default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+// ============================================
 // TYPE EXPORTS FOR INFERENCE
 // ============================================
 
@@ -165,3 +205,12 @@ export type NewScreenshot = typeof screenshots.$inferInsert;
 
 export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
+
+export type InventoryItem = typeof inventory.$inferSelect;
+export type NewInventoryItem = typeof inventory.$inferInsert;
+
+export type Blueprint = typeof blueprints.$inferSelect;
+export type NewBlueprint = typeof blueprints.$inferInsert;
+
+export type BlueprintIngredient = typeof blueprintIngredients.$inferSelect;
+export type NewBlueprintIngredient = typeof blueprintIngredients.$inferInsert;

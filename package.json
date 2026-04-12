@@ -4,7 +4,7 @@
   "description": "A personal logbook for Star Citizen pilots",
   "author": "Deckhand",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.4.7",
   "type": "module",
   "scripts": {
     "dev": "vite",

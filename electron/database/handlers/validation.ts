@@ -98,6 +98,33 @@ export function validateCargoRunInput(data: Record<string, unknown>, isUpdate = 
 }
 
 /**
+ * Validates an inventory item create/update payload.
+ */
+export function validateInventoryInput(data: Record<string, unknown>, isUpdate = false) {
+  if (!isUpdate) {
+    requireString(data.materialName, 'materialName');
+    requireNonNegative(data.quantityCscu, 'quantityCscu');
+  } else {
+    if (data.materialName !== undefined) requireString(data.materialName, 'materialName');
+    if (data.quantityCscu !== undefined) requireNonNegative(data.quantityCscu, 'quantityCscu');
+  }
+  if (data.quality !== undefined && data.quality !== null) {
+    requireNonNegative(data.quality, 'quality');
+  }
+}
+
+/**
+ * Validates a blueprint create/update payload.
+ */
+export function validateBlueprintInput(data: Record<string, unknown>, isUpdate = false) {
+  if (!isUpdate) {
+    requireString(data.name, 'name');
+  } else {
+    if (data.name !== undefined) requireString(data.name, 'name');
+  }
+}
+
+/**
  * Validates a mission create/update payload.
  */
 export function validateMissionInput(data: Record<string, unknown>, isUpdate = false) {

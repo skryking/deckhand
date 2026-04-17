@@ -91,15 +91,19 @@ export function ScreenshotModal({
     }
   };
 
-  const shipOptions = ships.map((ship) => ({
-    value: ship.id,
-    label: ship.nickname || `${ship.manufacturer} ${ship.model}`,
-  }));
+  const shipOptions = ships
+    .map((ship) => ({
+      value: ship.id,
+      label: ship.nickname || `${ship.manufacturer} ${ship.model}`,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
-  const locationOptions = locations.map((loc) => ({
-    value: loc.id,
-    label: loc.name,
-  }));
+  const locationOptions = locations
+    .map((loc) => ({
+      value: loc.id,
+      label: loc.name,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   return (
     <Modal

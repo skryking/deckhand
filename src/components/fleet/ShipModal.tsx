@@ -10,16 +10,16 @@ interface ShipModalProps {
 }
 
 const roleOptions = [
-  { value: "combat", label: "Combat" },
   { value: "cargo", label: "Cargo" },
-  { value: "exploration", label: "Exploration" },
-  { value: "mining", label: "Mining" },
-  { value: "racing", label: "Racing" },
-  { value: "salvage", label: "Salvage" },
-  { value: "medical", label: "Medical" },
+  { value: "combat", label: "Combat" },
   { value: "data", label: "Data Running" },
+  { value: "exploration", label: "Exploration" },
+  { value: "medical", label: "Medical" },
+  { value: "mining", label: "Mining" },
   { value: "multi", label: "Multi-Role" },
   { value: "other", label: "Other" },
+  { value: "racing", label: "Racing" },
+  { value: "salvage", label: "Salvage" },
 ];
 
 export function ShipModal({ isOpen, onClose, onSave, ship }: ShipModalProps) {

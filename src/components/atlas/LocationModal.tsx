@@ -15,27 +15,23 @@ interface LocationModalProps {
 }
 
 const typeOptions = [
-  // Celestial bodies
-  { value: "system", label: "Star System" },
-  { value: "star", label: "Star" },
-  { value: "planet", label: "Planet" },
-  { value: "moon", label: "Moon" },
-  { value: "asteroid", label: "Asteroid/Planetoid" },
-  // Orbital locations
-  { value: "lagrange", label: "Lagrange Point" },
-  { value: "station", label: "Space Station" },
-  { value: "platform", label: "Orbital Platform" },
-  // Surface locations
-  { value: "city", label: "Landing Zone/City" },
-  { value: "outpost", label: "Outpost" },
-  { value: "underground", label: "Underground Facility" },
-  // Other
   { value: "asteroid_belt", label: "Asteroid Belt" },
-  { value: "jump_point", label: "Jump Point" },
-  { value: "comm_array", label: "Comm Array" },
-  { value: "wreck", label: "Wreck/Derelict" },
+  { value: "asteroid", label: "Asteroid/Planetoid" },
   { value: "cave", label: "Cave" },
+  { value: "comm_array", label: "Comm Array" },
+  { value: "jump_point", label: "Jump Point" },
+  { value: "lagrange", label: "Lagrange Point" },
+  { value: "city", label: "Landing Zone/City" },
+  { value: "moon", label: "Moon" },
+  { value: "platform", label: "Orbital Platform" },
+  { value: "outpost", label: "Outpost" },
+  { value: "planet", label: "Planet" },
   { value: "poi", label: "Point of Interest" },
+  { value: "station", label: "Space Station" },
+  { value: "star", label: "Star" },
+  { value: "system", label: "Star System" },
+  { value: "underground", label: "Underground Facility" },
+  { value: "wreck", label: "Wreck/Derelict" },
 ];
 
 const serviceOptions = [
@@ -193,7 +189,8 @@ export function LocationModal({
     .map((loc) => ({
       value: loc.id,
       label: loc.name,
-    }));
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   return (
     <Modal

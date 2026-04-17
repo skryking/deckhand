@@ -20,11 +20,11 @@ interface BlueprintFormModalProps {
 }
 
 const categoryOptions = [
-  { value: "weapon", label: "Weapon" },
   { value: "armor", label: "Armor" },
   { value: "component", label: "Component" },
   { value: "consumable", label: "Consumable" },
   { value: "other", label: "Other" },
+  { value: "weapon", label: "Weapon" },
 ];
 
 interface IngredientForm {
@@ -132,10 +132,12 @@ export function BlueprintFormModal({
     }
   };
 
-  const locationOptions = locations.map((loc) => ({
-    value: loc.id,
-    label: loc.name,
-  }));
+  const locationOptions = locations
+    .map((loc) => ({
+      value: loc.id,
+      label: loc.name,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   return (
     <Modal

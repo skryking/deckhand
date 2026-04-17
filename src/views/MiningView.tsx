@@ -52,7 +52,11 @@ export function MiningView() {
       )
     }
 
-    return result
+    return [...result].sort((a, b) => {
+      const nameCompare = a.materialName.localeCompare(b.materialName)
+      if (nameCompare !== 0) return nameCompare
+      return b.quality - a.quality
+    })
   }, [inventory, categoryFilter, searchQuery])
 
   const stats = useMemo(() => {

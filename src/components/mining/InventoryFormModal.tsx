@@ -19,18 +19,18 @@ interface InventoryFormModalProps {
 }
 
 const categoryOptions = [
-  { value: "mineral", label: "Mineral" },
-  { value: "gem", label: "Gem" },
   { value: "component", label: "Component" },
-  { value: "salvage", label: "Salvage" },
+  { value: "gem", label: "Gem" },
+  { value: "mineral", label: "Mineral" },
   { value: "other", label: "Other" },
+  { value: "salvage", label: "Salvage" },
 ];
 
 const sourceOptions = [
   { value: "mined", label: "Mined" },
+  { value: "other", label: "Other" },
   { value: "purchased", label: "Purchased" },
   { value: "salvaged", label: "Salvaged" },
-  { value: "other", label: "Other" },
 ];
 
 export function InventoryFormModal({
@@ -105,15 +105,19 @@ export function InventoryFormModal({
     }
   };
 
-  const shipOptions = ships.map((ship) => ({
-    value: ship.id,
-    label: ship.nickname || `${ship.manufacturer} ${ship.model}`,
-  }));
+  const shipOptions = ships
+    .map((ship) => ({
+      value: ship.id,
+      label: ship.nickname || `${ship.manufacturer} ${ship.model}`,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
-  const locationOptions = locations.map((loc) => ({
-    value: loc.id,
-    label: loc.name,
-  }));
+  const locationOptions = locations
+    .map((loc) => ({
+      value: loc.id,
+      label: loc.name,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   return (
     <Modal

@@ -19,20 +19,20 @@ interface JournalEntryModalProps {
 }
 
 const entryTypeOptions = [
-  { value: "journal", label: "Journal" },
+  { value: "acquisition", label: "Acquisition" },
   { value: "cargo", label: "Cargo Run" },
   { value: "combat", label: "Combat" },
-  { value: "acquisition", label: "Acquisition" },
+  { value: "journal", label: "Journal" },
   { value: "mining", label: "Mining" },
   { value: "scavenging", label: "Scavenging" },
 ];
 
 const moodOptions = [
-  { value: "excited", label: "Excited" },
-  { value: "satisfied", label: "Satisfied" },
-  { value: "neutral", label: "Neutral" },
-  { value: "frustrated", label: "Frustrated" },
   { value: "disappointed", label: "Disappointed" },
+  { value: "excited", label: "Excited" },
+  { value: "frustrated", label: "Frustrated" },
+  { value: "neutral", label: "Neutral" },
+  { value: "satisfied", label: "Satisfied" },
 ];
 
 export function JournalEntryModal({
@@ -113,15 +113,19 @@ export function JournalEntryModal({
     }
   };
 
-  const shipOptions = ships.map((ship) => ({
-    value: ship.id,
-    label: ship.nickname || `${ship.manufacturer} ${ship.model}`,
-  }));
+  const shipOptions = ships
+    .map((ship) => ({
+      value: ship.id,
+      label: ship.nickname || `${ship.manufacturer} ${ship.model}`,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
-  const locationOptions = locations.map((loc) => ({
-    value: loc.id,
-    label: loc.name,
-  }));
+  const locationOptions = locations
+    .map((loc) => ({
+      value: loc.id,
+      label: loc.name,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   return (
     <Modal

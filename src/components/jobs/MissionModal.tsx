@@ -22,17 +22,17 @@ interface MissionModalProps {
 const missionTypeOptions = [
   { value: "bounty", label: "Bounty" },
   { value: "delivery", label: "Delivery" },
+  { value: "escort", label: "Escort" },
+  { value: "investigation", label: "Investigation" },
   { value: "mining", label: "Mining" },
   { value: "salvage", label: "Salvage" },
-  { value: "investigation", label: "Investigation" },
-  { value: "escort", label: "Escort" },
 ];
 
 const statusOptions = [
+  { value: "abandoned", label: "Abandoned" },
   { value: "active", label: "Active" },
   { value: "completed", label: "Completed" },
   { value: "failed", label: "Failed" },
-  { value: "abandoned", label: "Abandoned" },
 ];
 
 export function MissionModal({
@@ -129,15 +129,19 @@ export function MissionModal({
     }
   };
 
-  const shipOptions = ships.map((ship) => ({
-    value: ship.id,
-    label: ship.nickname || `${ship.manufacturer} ${ship.model}`,
-  }));
+  const shipOptions = ships
+    .map((ship) => ({
+      value: ship.id,
+      label: ship.nickname || `${ship.manufacturer} ${ship.model}`,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
-  const locationOptions = locations.map((loc) => ({
-    value: loc.id,
-    label: loc.name,
-  }));
+  const locationOptions = locations
+    .map((loc) => ({
+      value: loc.id,
+      label: loc.name,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   return (
     <Modal

@@ -10,22 +10,22 @@ import type {
 } from "../../types/database";
 
 const categoryOptions = [
-  { value: "mission", label: "Mission Payout" },
+  { value: "armor", label: "Armor" },
   { value: "bounty", label: "Bounty" },
   { value: "cargo", label: "Cargo/Trading" },
-  { value: "sale", label: "Sale" },
-  { value: "purchase", label: "Purchase" },
-  { value: "repair", label: "Repair" },
-  { value: "fuel", label: "Fuel" },
-  { value: "insurance", label: "Insurance" },
+  { value: "clothing", label: "Clothing" },
   { value: "fine", label: "Fine/Penalty" },
   { value: "food", label: "Food" },
-  { value: "armor", label: "Armor" },
-  { value: "weapons", label: "Weapons" },
-  { value: "ship_components", label: "Ship Components" },
-  { value: "clothing", label: "Clothing" },
-  { value: "utilities", label: "Utilities" },
+  { value: "fuel", label: "Fuel" },
+  { value: "insurance", label: "Insurance" },
+  { value: "mission", label: "Mission Payout" },
   { value: "other", label: "Other" },
+  { value: "purchase", label: "Purchase" },
+  { value: "repair", label: "Repair" },
+  { value: "sale", label: "Sale" },
+  { value: "ship_components", label: "Ship Components" },
+  { value: "utilities", label: "Utilities" },
+  { value: "weapons", label: "Weapons" },
 ];
 
 interface TransactionModalProps {
@@ -110,15 +110,19 @@ export function TransactionModal({
     }
   };
 
-  const shipOptions = ships.map((ship) => ({
-    value: ship.id,
-    label: ship.nickname || `${ship.manufacturer} ${ship.model}`,
-  }));
+  const shipOptions = ships
+    .map((ship) => ({
+      value: ship.id,
+      label: ship.nickname || `${ship.manufacturer} ${ship.model}`,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
-  const locationOptions = locations.map((loc) => ({
-    value: loc.id,
-    label: loc.name,
-  }));
+  const locationOptions = locations
+    .map((loc) => ({
+      value: loc.id,
+      label: loc.name,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   return (
     <Modal

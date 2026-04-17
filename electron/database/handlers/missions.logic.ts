@@ -1,8 +1,17 @@
 import { eq, desc } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { TestDB } from '../db-test-utils';
+import { incrementVisit } from './locations.logic';
 
 type DB = TestDB;
+
+function bumpMissionVisit(
+  tx: DB,
+  shipId: string | null | undefined,
+  locationId: string | null | undefined,
+) {
+  if (shipId && locationId) incrementVisit(tx, locationId);
+}
 
 export function findAllMissions(db: DB, options?: { limit?: number; offset?: number }) {
   let query = db.select().from(schema.missions).orderBy(desc(schema.missions.acceptedAt));
@@ -29,6 +38,10 @@ export function createMission(db: DB, data: typeof schema.missions.$inferInsert)
         shipId: newMission.shipId,
         missionId: newMission.id,
       }).run();
+    }
+
+    if (newMission.status === 'completed') {
+      bumpMissionVisit(tx, newMission.shipId, newMission.locationId);
     }
 
     return newMission;
@@ -82,6 +95,10 @@ export function updateMission(db: DB, id: string, data: Partial<typeof schema.mi
         .run();
     }
 
+    if (!wasCompleted && isNowCompleted) {
+      bumpMissionVisit(tx, updated.shipId, updated.locationId);
+    }
+
     return updated;
   });
 }
@@ -91,6 +108,7 @@ export function completeMission(db: DB, id: string) {
     const mission = tx.select().from(schema.missions).where(eq(schema.missions.id, id)).get();
     if (!mission) throw new Error('Mission not found');
 
+    const wasAlreadyCompleted = mission.status === 'completed';
     const completedAt = new Date();
     const updated = tx
       .update(schema.missions)
@@ -115,6 +133,10 @@ export function completeMission(db: DB, id: string) {
           missionId: id,
         }).run();
       }
+    }
+
+    if (!wasAlreadyCompleted) {
+      bumpMissionVisit(tx, mission.shipId, mission.locationId);
     }
 
     return updated;

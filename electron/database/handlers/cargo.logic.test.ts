@@ -230,6 +230,121 @@ describe('deleteCargoRun', () => {
   });
 });
 
+describe('location visit tracking', () => {
+  function seedLocation(name: string) {
+    return db.insert(schema.locations).values({ name }).returning().get();
+  }
+  function seedShip() {
+    return db
+      .insert(schema.ships)
+      .values({ manufacturer: 'Drake', model: 'Cutlass Black' })
+      .returning()
+      .get();
+  }
+
+  it('bumps origin and destination visits when completeCargoRun runs with ship+locations', () => {
+    const origin = seedLocation('Area18');
+    const dest = seedLocation('Lorville');
+    const ship = seedShip();
+
+    const run = createCargoRun(db, {
+      commodity: 'Laranite',
+      quantity: 10,
+      buyPrice: 100,
+      shipId: ship.id,
+      originLocationId: origin.id,
+      destinationLocationId: dest.id,
+      startedAt: new Date(),
+    });
+
+    completeCargoRun(db, run.id, 150);
+
+    const originAfter = db.select().from(schema.locations).where(eq(schema.locations.id, origin.id)).get()!;
+    const destAfter = db.select().from(schema.locations).where(eq(schema.locations.id, dest.id)).get()!;
+    expect(originAfter.visitCount).toBe(1);
+    expect(destAfter.visitCount).toBe(1);
+    expect(originAfter.firstVisitedAt).toBeTruthy();
+    expect(destAfter.firstVisitedAt).toBeTruthy();
+  });
+
+  it('does not bump visits when ship is missing', () => {
+    const dest = seedLocation('Lorville');
+    const run = createCargoRun(db, {
+      commodity: 'Laranite',
+      quantity: 10,
+      buyPrice: 100,
+      destinationLocationId: dest.id,
+      startedAt: new Date(),
+    });
+
+    completeCargoRun(db, run.id, 150);
+
+    const destAfter = db.select().from(schema.locations).where(eq(schema.locations.id, dest.id)).get()!;
+    expect(destAfter.visitCount).toBe(0);
+  });
+
+  it('completeCargoRun is idempotent for visit count', () => {
+    const origin = seedLocation('Area18');
+    const ship = seedShip();
+    const run = createCargoRun(db, {
+      commodity: 'Laranite',
+      quantity: 10,
+      buyPrice: 100,
+      shipId: ship.id,
+      originLocationId: origin.id,
+      startedAt: new Date(),
+    });
+
+    completeCargoRun(db, run.id, 150);
+    completeCargoRun(db, run.id, 150);
+
+    const originAfter = db.select().from(schema.locations).where(eq(schema.locations.id, origin.id)).get()!;
+    expect(originAfter.visitCount).toBe(1);
+  });
+
+  it('updateCargoRun bumps visits on transition to completed', () => {
+    const dest = seedLocation('Lorville');
+    const ship = seedShip();
+    const run = createCargoRun(db, {
+      commodity: 'Laranite',
+      quantity: 10,
+      buyPrice: 100,
+      shipId: ship.id,
+      destinationLocationId: dest.id,
+      startedAt: new Date(),
+    });
+
+    updateCargoRun(db, run.id, { status: 'completed', sellPrice: 150, completedAt: new Date() });
+
+    const destAfter = db.select().from(schema.locations).where(eq(schema.locations.id, dest.id)).get()!;
+    expect(destAfter.visitCount).toBe(1);
+  });
+
+  it('createCargoRun bumps visits when created as completed', () => {
+    const origin = seedLocation('Area18');
+    const dest = seedLocation('Lorville');
+    const ship = seedShip();
+
+    createCargoRun(db, {
+      commodity: 'Laranite',
+      quantity: 10,
+      buyPrice: 100,
+      sellPrice: 150,
+      status: 'completed',
+      shipId: ship.id,
+      originLocationId: origin.id,
+      destinationLocationId: dest.id,
+      startedAt: new Date(),
+      completedAt: new Date(),
+    });
+
+    const originAfter = db.select().from(schema.locations).where(eq(schema.locations.id, origin.id)).get()!;
+    const destAfter = db.select().from(schema.locations).where(eq(schema.locations.id, dest.id)).get()!;
+    expect(originAfter.visitCount).toBe(1);
+    expect(destAfter.visitCount).toBe(1);
+  });
+});
+
 describe('query operations', () => {
   it('findAll returns all cargo runs', () => {
     createCargoRun(db, { commodity: 'A', quantity: 1, buyPrice: 10, startedAt: new Date() });

@@ -155,6 +155,83 @@ describe('updateMission', () => {
   });
 });
 
+describe('location visit tracking', () => {
+  function seedLocation(name: string) {
+    return db.insert(schema.locations).values({ name }).returning().get();
+  }
+  function seedShip() {
+    return db
+      .insert(schema.ships)
+      .values({ manufacturer: 'Drake', model: 'Cutlass Black' })
+      .returning()
+      .get();
+  }
+
+  it('bumps location visit when completeMission runs with ship+location', () => {
+    const loc = seedLocation('Grim Hex');
+    const ship = seedShip();
+    const mission = createMission(db, {
+      title: 'Bounty',
+      status: 'active',
+      shipId: ship.id,
+      locationId: loc.id,
+    });
+
+    completeMission(db, mission.id);
+
+    const after = db.select().from(schema.locations).where(eq(schema.locations.id, loc.id)).get()!;
+    expect(after.visitCount).toBe(1);
+    expect(after.firstVisitedAt).toBeTruthy();
+  });
+
+  it('does not bump visit when ship is missing', () => {
+    const loc = seedLocation('Grim Hex');
+    const mission = createMission(db, {
+      title: 'Favor',
+      status: 'active',
+      locationId: loc.id,
+    });
+
+    completeMission(db, mission.id);
+
+    const after = db.select().from(schema.locations).where(eq(schema.locations.id, loc.id)).get()!;
+    expect(after.visitCount).toBe(0);
+  });
+
+  it('completeMission is idempotent for visit count', () => {
+    const loc = seedLocation('Grim Hex');
+    const ship = seedShip();
+    const mission = createMission(db, {
+      title: 'Bounty',
+      status: 'active',
+      shipId: ship.id,
+      locationId: loc.id,
+    });
+
+    completeMission(db, mission.id);
+    completeMission(db, mission.id);
+
+    const after = db.select().from(schema.locations).where(eq(schema.locations.id, loc.id)).get()!;
+    expect(after.visitCount).toBe(1);
+  });
+
+  it('updateMission bumps visit on transition to completed', () => {
+    const loc = seedLocation('Grim Hex');
+    const ship = seedShip();
+    const mission = createMission(db, {
+      title: 'Bounty',
+      status: 'active',
+      shipId: ship.id,
+      locationId: loc.id,
+    });
+
+    updateMission(db, mission.id, { status: 'completed', completedAt: new Date() });
+
+    const after = db.select().from(schema.locations).where(eq(schema.locations.id, loc.id)).get()!;
+    expect(after.visitCount).toBe(1);
+  });
+});
+
 describe('deleteMission', () => {
   it('deletes mission and associated transactions', () => {
     const mission = createMission(db, {

@@ -1,8 +1,20 @@
 import { eq, and, lt, gte, desc } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { TestDB } from '../db-test-utils';
+import { incrementVisit } from './locations.logic';
 
 type DB = TestDB;
+
+function bumpCargoVisits(
+  tx: DB,
+  shipId: string | null | undefined,
+  originLocationId: string | null | undefined,
+  destinationLocationId: string | null | undefined,
+) {
+  if (!shipId) return;
+  if (originLocationId) incrementVisit(tx, originLocationId);
+  if (destinationLocationId) incrementVisit(tx, destinationLocationId);
+}
 
 export function findAllCargoRuns(db: DB, options?: { limit?: number; offset?: number }) {
   let query = db.select().from(schema.cargoRuns).orderBy(desc(schema.cargoRuns.startedAt));
@@ -45,6 +57,10 @@ export function createCargoRun(db: DB, data: typeof schema.cargoRuns.$inferInser
         shipId: newRun.shipId,
         cargoRunId: newRun.id,
       }).run();
+    }
+
+    if (newRun.status === 'completed') {
+      bumpCargoVisits(tx, newRun.shipId, newRun.originLocationId, newRun.destinationLocationId);
     }
 
     return newRun;
@@ -121,6 +137,10 @@ export function updateCargoRun(db: DB, id: string, data: Partial<typeof schema.c
         .run();
     }
 
+    if (!wasCompleted && isNowCompleted) {
+      bumpCargoVisits(tx, updated.shipId, updated.originLocationId, updated.destinationLocationId);
+    }
+
     return updated;
   });
 }
@@ -130,6 +150,7 @@ export function completeCargoRun(db: DB, id: string, sellPrice: number) {
     const cargoRun = tx.select().from(schema.cargoRuns).where(eq(schema.cargoRuns.id, id)).get();
     if (!cargoRun) throw new Error('Cargo run not found');
 
+    const wasAlreadyCompleted = cargoRun.status === 'completed';
     const profit = (sellPrice * cargoRun.quantity) - (cargoRun.buyPrice * cargoRun.quantity);
     const completedAt = new Date();
 
@@ -156,6 +177,10 @@ export function completeCargoRun(db: DB, id: string, sellPrice: number) {
         shipId: cargoRun.shipId,
         cargoRunId: id,
       }).run();
+    }
+
+    if (!wasAlreadyCompleted) {
+      bumpCargoVisits(tx, cargoRun.shipId, cargoRun.originLocationId, cargoRun.destinationLocationId);
     }
 
     return updated;

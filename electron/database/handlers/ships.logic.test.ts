@@ -113,7 +113,7 @@ describe('updateShip', () => {
 });
 
 describe('deleteShip', () => {
-  it('deletes ship and purchase transaction', () => {
+  it('removes the ship row', () => {
     const ship = createShip(db, {
       manufacturer: 'RSI',
       model: 'Aurora MR',
@@ -125,9 +125,68 @@ describe('deleteShip', () => {
 
     const remaining = db.select().from(schema.ships).where(eq(schema.ships.id, ship.id)).all();
     expect(remaining).toHaveLength(0);
-    const txns = db.select().from(schema.transactions)
+  });
+
+  it('preserves the purchase transaction but clears shipId (keeps ledger history)', () => {
+    const ship = createShip(db, {
+      manufacturer: 'RSI',
+      model: 'Aurora MR',
+      acquiredPrice: 25000,
+      acquiredAt: new Date(),
+    });
+
+    deleteShip(db, ship.id);
+
+    // No row still references this shipId
+    const byShip = db.select().from(schema.transactions)
       .where(eq(schema.transactions.shipId, ship.id)).all();
-    expect(txns).toHaveLength(0);
+    expect(byShip).toHaveLength(0);
+
+    // But the ledger entry itself is retained with a null shipId
+    const allPurchases = db.select().from(schema.transactions)
+      .where(eq(schema.transactions.category, 'purchase')).all();
+    expect(allPurchases).toHaveLength(1);
+    expect(allPurchases[0].shipId).toBeNull();
+    expect(allPurchases[0].amount).toBe(-25000);
+  });
+
+  it('nulls shipId across journal, cargo, missions, inventory, screenshots', () => {
+    const ship = createShip(db, { manufacturer: 'Drake', model: 'Cutlass' });
+
+    const journal = db.insert(schema.journalEntries).values({
+      content: 'Flew it',
+      shipId: ship.id,
+      timestamp: new Date(),
+    }).returning().get();
+    const cargo = db.insert(schema.cargoRuns).values({
+      commodity: 'X',
+      quantity: 1,
+      buyPrice: 10,
+      shipId: ship.id,
+      startedAt: new Date(),
+    }).returning().get();
+    const mission = db.insert(schema.missions).values({
+      title: 'M',
+      shipId: ship.id,
+    }).returning().get();
+    const inv = db.insert(schema.inventory).values({
+      materialName: 'Ore',
+      quantityCscu: 100,
+      quality: 500,
+      shipId: ship.id,
+    }).returning().get();
+    const screenshot = db.insert(schema.screenshots).values({
+      filePath: '/tmp/x.png',
+      shipId: ship.id,
+    }).returning().get();
+
+    deleteShip(db, ship.id);
+
+    expect(db.select().from(schema.journalEntries).where(eq(schema.journalEntries.id, journal.id)).get()!.shipId).toBeNull();
+    expect(db.select().from(schema.cargoRuns).where(eq(schema.cargoRuns.id, cargo.id)).get()!.shipId).toBeNull();
+    expect(db.select().from(schema.missions).where(eq(schema.missions.id, mission.id)).get()!.shipId).toBeNull();
+    expect(db.select().from(schema.inventory).where(eq(schema.inventory.id, inv.id)).get()!.shipId).toBeNull();
+    expect(db.select().from(schema.screenshots).where(eq(schema.screenshots.id, screenshot.id)).get()!.shipId).toBeNull();
   });
 });
 

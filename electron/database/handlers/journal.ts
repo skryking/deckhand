@@ -2,6 +2,7 @@ import { ipcMain } from 'electron';
 import { eq, desc, count } from 'drizzle-orm';
 import { getDatabase, schema } from '../index';
 import type { DbResponse, QueryOptions } from '../../../src/types/database';
+import { validateFks } from './fk-validation';
 
 export function registerJournalHandlers(): void {
   // Get all journal entries
@@ -29,6 +30,7 @@ export function registerJournalHandlers(): void {
   ipcMain.handle('db:journal:create', async (_, data: typeof schema.journalEntries.$inferInsert): Promise<DbResponse> => {
     try {
       const db = getDatabase();
+      validateFks(db, { shipId: data.shipId, locationId: data.locationId });
       const result = db.insert(schema.journalEntries).values(data).returning().get();
       return { success: true, data: result };
     } catch (error) {
@@ -41,6 +43,7 @@ export function registerJournalHandlers(): void {
   ipcMain.handle('db:journal:update', async (_, id: string, data: Partial<typeof schema.journalEntries.$inferInsert>): Promise<DbResponse> => {
     try {
       const db = getDatabase();
+      validateFks(db, { shipId: data.shipId, locationId: data.locationId });
       const result = db
         .update(schema.journalEntries)
         .set({ ...data, updatedAt: new Date() })
@@ -58,7 +61,14 @@ export function registerJournalHandlers(): void {
   ipcMain.handle('db:journal:delete', async (_, id: string): Promise<DbResponse> => {
     try {
       const db = getDatabase();
-      db.delete(schema.journalEntries).where(eq(schema.journalEntries.id, id)).run();
+      db.transaction((tx) => {
+        // Null out references from screenshots and transactions that pointed here.
+        tx.update(schema.screenshots).set({ journalEntryId: null })
+          .where(eq(schema.screenshots.journalEntryId, id)).run();
+        tx.update(schema.transactions).set({ journalEntryId: null })
+          .where(eq(schema.transactions.journalEntryId, id)).run();
+        tx.delete(schema.journalEntries).where(eq(schema.journalEntries.id, id)).run();
+      });
       return { success: true };
     } catch (error) {
       console.error('[Journal] delete error:', error);

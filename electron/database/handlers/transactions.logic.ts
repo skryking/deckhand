@@ -1,6 +1,7 @@
 import { eq, desc, sql } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { TestDB } from '../db-test-utils';
+import { validateFks } from './fk-validation';
 
 type DB = TestDB;
 
@@ -16,6 +17,13 @@ export function findAllTransactions(db: DB, options?: { limit?: number; offset?:
 }
 
 export function createTransaction(db: DB, data: typeof schema.transactions.$inferInsert) {
+  validateFks(db, {
+    shipId: data.shipId,
+    locationId: data.locationId,
+    journalEntryId: data.journalEntryId,
+    missionId: data.missionId,
+    cargoRunId: data.cargoRunId,
+  });
   const insertData = {
     ...data,
     timestamp: data.timestamp ? new Date(data.timestamp as unknown as string | number) : new Date(),
@@ -24,6 +32,13 @@ export function createTransaction(db: DB, data: typeof schema.transactions.$infe
 }
 
 export function updateTransaction(db: DB, id: string, data: Partial<typeof schema.transactions.$inferInsert>) {
+  validateFks(db, {
+    shipId: data.shipId,
+    locationId: data.locationId,
+    journalEntryId: data.journalEntryId,
+    missionId: data.missionId,
+    cargoRunId: data.cargoRunId,
+  });
   const updateData = {
     ...data,
     timestamp: data.timestamp ? new Date(data.timestamp as unknown as string | number) : undefined,

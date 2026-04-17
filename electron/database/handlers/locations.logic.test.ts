@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { eq } from 'drizzle-orm';
 import { createTestDatabase, type TestDB } from '../db-test-utils';
 import * as schema from '../schema';
 import {
@@ -36,6 +37,83 @@ describe('CRUD operations', () => {
     const loc = createLocation(db, { name: 'Port Olisar' });
     deleteLocation(db, loc.id);
     expect(findLocationById(db, loc.id)).toBeNull();
+  });
+
+  it('rejects creating a location with a non-existent parentId', () => {
+    expect(() => createLocation(db, { name: 'Child', parentId: 'bogus' })).toThrow('Location not found');
+  });
+
+  it('rejects setting parentId to self', () => {
+    const loc = createLocation(db, { name: 'Port Olisar' });
+    expect(() => updateLocation(db, loc.id, { parentId: loc.id })).toThrow('own parent');
+  });
+
+  it('rejects setting parentId to a non-existent location', () => {
+    const loc = createLocation(db, { name: 'Port Olisar' });
+    expect(() => updateLocation(db, loc.id, { parentId: 'bogus' })).toThrow('Location not found');
+  });
+});
+
+describe('deleteLocation cascades', () => {
+  it('reparents child locations to the grandparent', () => {
+    const grandparent = createLocation(db, { name: 'Stanton' });
+    const parent = createLocation(db, { name: 'Hurston', parentId: grandparent.id });
+    const child = createLocation(db, { name: 'Lorville', parentId: parent.id });
+
+    deleteLocation(db, parent.id);
+
+    const afterChild = findLocationById(db, child.id);
+    expect(afterChild!.parentId).toBe(grandparent.id);
+  });
+
+  it('makes top-level children roots when deleting a root location', () => {
+    const root = createLocation(db, { name: 'Stanton' });
+    const child = createLocation(db, { name: 'Hurston', parentId: root.id });
+
+    deleteLocation(db, root.id);
+
+    const afterChild = findLocationById(db, child.id);
+    expect(afterChild!.parentId).toBeNull();
+  });
+
+  it('nulls locationId on referencing journal, transactions, screenshots, missions, cargo, inventory, blueprints', () => {
+    const loc = createLocation(db, { name: 'Lorville' });
+
+    const journal = db.insert(schema.journalEntries).values({
+      content: 'Visited', locationId: loc.id, timestamp: new Date(),
+    }).returning().get();
+    const txn = db.insert(schema.transactions).values({
+      amount: 100, category: 'other', locationId: loc.id, timestamp: new Date(),
+    }).returning().get();
+    const screenshot = db.insert(schema.screenshots).values({
+      filePath: '/tmp/x.png', locationId: loc.id,
+    }).returning().get();
+    const mission = db.insert(schema.missions).values({
+      title: 'M', locationId: loc.id,
+    }).returning().get();
+    const cargoOrigin = db.insert(schema.cargoRuns).values({
+      commodity: 'A', quantity: 1, buyPrice: 10, originLocationId: loc.id, startedAt: new Date(),
+    }).returning().get();
+    const cargoDest = db.insert(schema.cargoRuns).values({
+      commodity: 'B', quantity: 1, buyPrice: 10, destinationLocationId: loc.id, startedAt: new Date(),
+    }).returning().get();
+    const inv = db.insert(schema.inventory).values({
+      materialName: 'Ore', quantityCscu: 1, quality: 0, locationId: loc.id,
+    }).returning().get();
+    const bp = db.insert(schema.blueprints).values({
+      name: 'BP', locationId: loc.id,
+    }).returning().get();
+
+    deleteLocation(db, loc.id);
+
+    expect(db.select().from(schema.journalEntries).where(eq(schema.journalEntries.id, journal.id)).get()!.locationId).toBeNull();
+    expect(db.select().from(schema.transactions).where(eq(schema.transactions.id, txn.id)).get()!.locationId).toBeNull();
+    expect(db.select().from(schema.screenshots).where(eq(schema.screenshots.id, screenshot.id)).get()!.locationId).toBeNull();
+    expect(db.select().from(schema.missions).where(eq(schema.missions.id, mission.id)).get()!.locationId).toBeNull();
+    expect(db.select().from(schema.cargoRuns).where(eq(schema.cargoRuns.id, cargoOrigin.id)).get()!.originLocationId).toBeNull();
+    expect(db.select().from(schema.cargoRuns).where(eq(schema.cargoRuns.id, cargoDest.id)).get()!.destinationLocationId).toBeNull();
+    expect(db.select().from(schema.inventory).where(eq(schema.inventory.id, inv.id)).get()!.locationId).toBeNull();
+    expect(db.select().from(schema.blueprints).where(eq(schema.blueprints.id, bp.id)).get()!.locationId).toBeNull();
   });
 });
 

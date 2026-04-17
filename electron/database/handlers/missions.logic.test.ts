@@ -232,6 +232,28 @@ describe('location visit tracking', () => {
   });
 });
 
+describe('FK validation', () => {
+  it('rejects createMission with a non-existent shipId', () => {
+    expect(() => createMission(db, { title: 'M', shipId: 'bogus' })).toThrow('Ship not found');
+  });
+
+  it('rejects createMission with a non-existent locationId', () => {
+    expect(() => createMission(db, { title: 'M', locationId: 'bogus' })).toThrow('Location not found');
+  });
+
+  it('rejects updateMission with a non-existent shipId', () => {
+    const mission = createMission(db, { title: 'M' });
+    expect(() => updateMission(db, mission.id, { shipId: 'bogus' })).toThrow('Ship not found');
+  });
+
+  it('allows nulling FKs (null is a legal unlink)', () => {
+    const loc = db.insert(schema.locations).values({ name: 'X' }).returning().get();
+    const mission = createMission(db, { title: 'M', locationId: loc.id });
+    const updated = updateMission(db, mission.id, { locationId: null });
+    expect(updated.locationId).toBeNull();
+  });
+});
+
 describe('deleteMission', () => {
   it('deletes mission and associated transactions', () => {
     const mission = createMission(db, {

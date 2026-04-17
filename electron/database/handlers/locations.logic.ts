@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { TestDB } from '../db-test-utils';
 import { getShipLocation } from './ships.logic';
+import { validateFks } from './fk-validation';
 
 type DB = TestDB;
 
@@ -15,10 +16,15 @@ export function findLocationById(db: DB, id: string) {
 }
 
 export function createLocation(db: DB, data: typeof schema.locations.$inferInsert) {
+  validateFks(db, { parentId: data.parentId });
   return db.insert(schema.locations).values(data).returning().get();
 }
 
 export function updateLocation(db: DB, id: string, data: Partial<typeof schema.locations.$inferInsert>) {
+  if (data.parentId !== undefined) {
+    if (data.parentId === id) throw new Error('Location cannot be its own parent');
+    validateFks(db, { parentId: data.parentId });
+  }
   return db
     .update(schema.locations)
     .set({ ...data, updatedAt: new Date() })
@@ -28,7 +34,29 @@ export function updateLocation(db: DB, id: string, data: Partial<typeof schema.l
 }
 
 export function deleteLocation(db: DB, id: string) {
-  db.delete(schema.locations).where(eq(schema.locations.id, id)).run();
+  db.transaction((tx) => {
+    const location = tx.select().from(schema.locations).where(eq(schema.locations.id, id)).get();
+    if (!location) return;
+
+    // Reparent child locations to the deleted location's own parent (keeps the
+    // hierarchy intact — children don't get orphaned or cascade-deleted).
+    tx.update(schema.locations)
+      .set({ parentId: location.parentId ?? null })
+      .where(eq(schema.locations.parentId, id))
+      .run();
+
+    // Null out locationId references across every table that points here.
+    tx.update(schema.journalEntries).set({ locationId: null }).where(eq(schema.journalEntries.locationId, id)).run();
+    tx.update(schema.transactions).set({ locationId: null }).where(eq(schema.transactions.locationId, id)).run();
+    tx.update(schema.screenshots).set({ locationId: null }).where(eq(schema.screenshots.locationId, id)).run();
+    tx.update(schema.missions).set({ locationId: null }).where(eq(schema.missions.locationId, id)).run();
+    tx.update(schema.cargoRuns).set({ originLocationId: null }).where(eq(schema.cargoRuns.originLocationId, id)).run();
+    tx.update(schema.cargoRuns).set({ destinationLocationId: null }).where(eq(schema.cargoRuns.destinationLocationId, id)).run();
+    tx.update(schema.inventory).set({ locationId: null }).where(eq(schema.inventory.locationId, id)).run();
+    tx.update(schema.blueprints).set({ locationId: null }).where(eq(schema.blueprints.locationId, id)).run();
+
+    tx.delete(schema.locations).where(eq(schema.locations.id, id)).run();
+  });
 }
 
 export function incrementVisit(db: DB, id: string) {

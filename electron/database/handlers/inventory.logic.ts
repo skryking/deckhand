@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { TestDB } from '../db-test-utils';
+import { validateFks } from './fk-validation';
 
 type DB = TestDB;
 
@@ -17,6 +18,7 @@ export function findInventoryById(db: DB, id: string) {
 }
 
 export function createInventoryItem(db: DB, data: typeof schema.inventory.$inferInsert) {
+  validateFks(db, { shipId: data.shipId, locationId: data.locationId });
   return db.insert(schema.inventory).values(data).returning().get();
 }
 
@@ -24,6 +26,7 @@ export function updateInventoryItem(db: DB, id: string, data: Partial<typeof sch
   const existing = db.select().from(schema.inventory).where(eq(schema.inventory.id, id)).get();
   if (!existing) throw new Error('Inventory item not found');
 
+  validateFks(db, { shipId: data.shipId, locationId: data.locationId });
   return db.update(schema.inventory)
     .set({ ...data, updatedAt: new Date() })
     .where(eq(schema.inventory.id, id))

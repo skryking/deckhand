@@ -2,6 +2,7 @@ import { eq, desc } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { TestDB } from '../db-test-utils';
 import { incrementVisit } from './locations.logic';
+import { validateFks } from './fk-validation';
 
 type DB = TestDB;
 
@@ -25,6 +26,7 @@ export function findAllMissions(db: DB, options?: { limit?: number; offset?: num
 }
 
 export function createMission(db: DB, data: typeof schema.missions.$inferInsert) {
+  validateFks(db, { shipId: data.shipId, locationId: data.locationId });
   return db.transaction((tx) => {
     const newMission = tx.insert(schema.missions).values(data).returning().get();
 
@@ -49,6 +51,7 @@ export function createMission(db: DB, data: typeof schema.missions.$inferInsert)
 }
 
 export function updateMission(db: DB, id: string, data: Partial<typeof schema.missions.$inferInsert>) {
+  validateFks(db, { shipId: data.shipId, locationId: data.locationId });
   return db.transaction((tx) => {
     const current = tx.select().from(schema.missions).where(eq(schema.missions.id, id)).get();
     if (!current) throw new Error('Mission not found');

@@ -211,6 +211,28 @@ describe('updateCargoRun', () => {
   });
 });
 
+describe('FK validation', () => {
+  it('rejects createCargoRun with a non-existent shipId', () => {
+    expect(() => createCargoRun(db, {
+      commodity: 'X', quantity: 1, buyPrice: 10, shipId: 'bogus', startedAt: new Date(),
+    })).toThrow('Ship not found');
+  });
+
+  it('rejects createCargoRun with a non-existent originLocationId', () => {
+    expect(() => createCargoRun(db, {
+      commodity: 'X', quantity: 1, buyPrice: 10, originLocationId: 'bogus', startedAt: new Date(),
+    })).toThrow('Location not found');
+  });
+
+  it('rejects updateCargoRun with a non-existent destinationLocationId', () => {
+    const run = createCargoRun(db, {
+      commodity: 'X', quantity: 1, buyPrice: 10, startedAt: new Date(),
+    });
+    expect(() => updateCargoRun(db, run.id, { destinationLocationId: 'bogus' }))
+      .toThrow('Location not found');
+  });
+});
+
 describe('deleteCargoRun', () => {
   it('deletes cargo run and associated transactions', () => {
     const run = createCargoRun(db, {

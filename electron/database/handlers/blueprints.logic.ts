@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { TestDB } from '../db-test-utils';
 import type { BlueprintCraftability, IngredientStatus } from '../../../src/types/database';
+import { validateFks } from './fk-validation';
 
 type DB = TestDB;
 
@@ -30,6 +31,7 @@ export function createBlueprint(
     ingredients?: Omit<typeof schema.blueprintIngredients.$inferInsert, 'blueprintId'>[];
   }
 ) {
+  validateFks(db, { locationId: data.locationId });
   return db.transaction((tx) => {
     const { ingredients, ...blueprintData } = data;
     const blueprint = tx.insert(schema.blueprints).values(blueprintData).returning().get();
@@ -58,6 +60,7 @@ export function updateBlueprint(
     ingredients?: Omit<typeof schema.blueprintIngredients.$inferInsert, 'blueprintId'>[];
   }
 ) {
+  validateFks(db, { locationId: data.locationId });
   return db.transaction((tx) => {
     const existing = tx.select().from(schema.blueprints).where(eq(schema.blueprints.id, id)).get();
     if (!existing) throw new Error('Blueprint not found');

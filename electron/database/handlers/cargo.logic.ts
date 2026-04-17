@@ -2,6 +2,7 @@ import { eq, and, lt, gte, desc } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { TestDB } from '../db-test-utils';
 import { incrementVisit } from './locations.logic';
+import { validateFks } from './fk-validation';
 
 type DB = TestDB;
 
@@ -28,6 +29,11 @@ export function findAllCargoRuns(db: DB, options?: { limit?: number; offset?: nu
 }
 
 export function createCargoRun(db: DB, data: typeof schema.cargoRuns.$inferInsert) {
+  validateFks(db, {
+    shipId: data.shipId,
+    originLocationId: data.originLocationId,
+    destinationLocationId: data.destinationLocationId,
+  });
   return db.transaction((tx) => {
     const newRun = tx.insert(schema.cargoRuns).values(data).returning().get();
 
@@ -68,6 +74,11 @@ export function createCargoRun(db: DB, data: typeof schema.cargoRuns.$inferInser
 }
 
 export function updateCargoRun(db: DB, id: string, data: Partial<typeof schema.cargoRuns.$inferInsert>) {
+  validateFks(db, {
+    shipId: data.shipId,
+    originLocationId: data.originLocationId,
+    destinationLocationId: data.destinationLocationId,
+  });
   return db.transaction((tx) => {
     const current = tx.select().from(schema.cargoRuns).where(eq(schema.cargoRuns.id, id)).get();
     if (!current) throw new Error('Cargo run not found');

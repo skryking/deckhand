@@ -73,9 +73,17 @@ export function updateShip(db: DB, id: string, data: Partial<typeof schema.ships
 
 export function deleteShip(db: DB, id: string) {
   db.transaction((tx) => {
-    tx.delete(schema.transactions)
-      .where(and(eq(schema.transactions.shipId, id), eq(schema.transactions.category, 'purchase')))
-      .run();
+    // Null out shipId across every table that references it. We preserve the
+    // rows (journal entries, cargo runs, missions, inventory, ledger history)
+    // rather than cascade-deleting — the user's logged activity stays intact,
+    // just decoupled from the now-missing ship.
+    tx.update(schema.journalEntries).set({ shipId: null }).where(eq(schema.journalEntries.shipId, id)).run();
+    tx.update(schema.transactions).set({ shipId: null }).where(eq(schema.transactions.shipId, id)).run();
+    tx.update(schema.screenshots).set({ shipId: null }).where(eq(schema.screenshots.shipId, id)).run();
+    tx.update(schema.missions).set({ shipId: null }).where(eq(schema.missions.shipId, id)).run();
+    tx.update(schema.cargoRuns).set({ shipId: null }).where(eq(schema.cargoRuns.shipId, id)).run();
+    tx.update(schema.inventory).set({ shipId: null }).where(eq(schema.inventory.shipId, id)).run();
+
     tx.delete(schema.ships).where(eq(schema.ships.id, id)).run();
   });
 }

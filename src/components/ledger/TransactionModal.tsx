@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
 import { Modal, ModalFooter, Button, Input, Textarea, Select } from "../ui";
 import { formatDateTimeLocal } from "../../lib/format";
+import { useEntityForm } from "../../lib/useEntityForm";
 import type {
   Transaction,
   CreateTransactionInput,
@@ -47,68 +47,46 @@ export function TransactionModal({
   ships,
   locations,
 }: TransactionModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    transactionType: "income" as "income" | "expense",
-    amount: "",
-    category: "mission",
-    description: "",
-    shipId: "",
-    locationId: "",
-    timestamp: formatDateTimeLocal(new Date()),
-  });
+  const { formData, setFormData, loading, handleSubmit } = useEntityForm({
+    entity: transaction,
+    isOpen,
+    onClose,
+    errorLabel: "transaction",
+    defaultFormData: {
+      transactionType: "income" as "income" | "expense",
+      amount: "",
+      category: "mission",
+      description: "",
+      shipId: "",
+      locationId: "",
+      timestamp: formatDateTimeLocal(new Date()),
+    },
+    toFormData: (t: Transaction) => ({
+      transactionType: (t.amount >= 0 ? "income" : "expense") as "income" | "expense",
+      amount: Math.abs(t.amount).toString(),
+      category: t.category,
+      description: t.description || "",
+      shipId: t.shipId || "",
+      locationId: t.locationId || "",
+      timestamp: formatDateTimeLocal(new Date(t.timestamp)),
+    }),
+    onSubmit: async (data) => {
+      const amountValue = parseFloat(data.amount) || 0;
+      const signedAmount = data.transactionType === "income" ? amountValue : -amountValue;
 
-  useEffect(() => {
-    if (transaction) {
-      const isIncome = transaction.amount >= 0;
-      setFormData({
-        transactionType: isIncome ? "income" : "expense",
-        amount: Math.abs(transaction.amount).toString(),
-        category: transaction.category,
-        description: transaction.description || "",
-        shipId: transaction.shipId || "",
-        locationId: transaction.locationId || "",
-        timestamp: formatDateTimeLocal(new Date(transaction.timestamp)),
-      });
-    } else {
-      setFormData({
-        transactionType: "income",
-        amount: "",
-        category: "mission",
-        description: "",
-        shipId: "",
-        locationId: "",
-        timestamp: formatDateTimeLocal(new Date()),
-      });
-    }
-  }, [transaction, isOpen]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const amountValue = parseFloat(formData.amount) || 0;
-      const signedAmount = formData.transactionType === "income" ? amountValue : -amountValue;
-
-      const data: CreateTransactionInput | UpdateTransactionInput = {
-        timestamp: new Date(formData.timestamp),
+      const payload: CreateTransactionInput | UpdateTransactionInput = {
+        timestamp: new Date(data.timestamp),
         amount: signedAmount,
-        category: formData.category,
-        description: formData.description || null,
-        shipId: formData.shipId || null,
-        locationId: formData.locationId || null,
+        category: data.category,
+        description: data.description || null,
+        shipId: data.shipId || null,
+        locationId: data.locationId || null,
         journalEntryId: transaction?.journalEntryId || null,
       };
 
-      await onSave(data);
-      onClose();
-    } catch (error) {
-      console.error("Failed to save transaction:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      await onSave(payload);
+    },
+  });
 
   const shipOptions = ships
     .map((ship) => ({

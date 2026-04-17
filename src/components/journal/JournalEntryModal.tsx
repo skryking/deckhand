@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
 import { Modal, ModalFooter, Button, Input, Textarea, Select, LinkedScreenshots } from "../ui";
 import { useScreenshotsByJournalEntry } from "../../lib/db";
+import { useEntityForm } from "../../lib/useEntityForm";
 import type {
   JournalEntry,
   CreateJournalEntryInput,
@@ -44,74 +44,52 @@ export function JournalEntryModal({
   locations,
 }: JournalEntryModalProps) {
   const { data: linkedScreenshots, refetch: refetchScreenshots } = useScreenshotsByJournalEntry(entry?.id ?? null);
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    title: "",
-    content: "",
-    entryType: "journal",
-    mood: "",
-    shipId: "",
-    locationId: "",
-    tags: "",
-    isFavorite: false,
-  });
-
-  useEffect(() => {
-    if (entry) {
-      setFormData({
-        title: entry.title || "",
-        content: entry.content || "",
-        entryType: entry.entryType || "journal",
-        mood: entry.mood || "",
-        shipId: entry.shipId || "",
-        locationId: entry.locationId || "",
-        tags: entry.tags?.join(", ") || "",
-        isFavorite: entry.isFavorite || false,
-      });
-    } else {
-      setFormData({
-        title: "",
-        content: "",
-        entryType: "journal",
-        mood: "",
-        shipId: "",
-        locationId: "",
-        tags: "",
-        isFavorite: false,
-      });
-    }
-  }, [entry, isOpen]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const tagsArray = formData.tags
+  const { formData, setFormData, loading, handleSubmit } = useEntityForm({
+    entity: entry,
+    isOpen,
+    onClose,
+    errorLabel: "journal entry",
+    defaultFormData: {
+      title: "",
+      content: "",
+      entryType: "journal",
+      mood: "",
+      shipId: "",
+      locationId: "",
+      tags: "",
+      isFavorite: false,
+    },
+    toFormData: (e: JournalEntry) => ({
+      title: e.title || "",
+      content: e.content || "",
+      entryType: e.entryType || "journal",
+      mood: e.mood || "",
+      shipId: e.shipId || "",
+      locationId: e.locationId || "",
+      tags: e.tags?.join(", ") || "",
+      isFavorite: e.isFavorite || false,
+    }),
+    onSubmit: async (data) => {
+      const tagsArray = data.tags
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean);
 
-      const data: CreateJournalEntryInput | UpdateJournalEntryInput = {
+      const payload: CreateJournalEntryInput | UpdateJournalEntryInput = {
         timestamp: entry?.timestamp || new Date(),
-        title: formData.title || null,
-        content: formData.content,
-        entryType: formData.entryType || null,
-        mood: formData.mood || null,
-        shipId: formData.shipId || null,
-        locationId: formData.locationId || null,
+        title: data.title || null,
+        content: data.content,
+        entryType: data.entryType || null,
+        mood: data.mood || null,
+        shipId: data.shipId || null,
+        locationId: data.locationId || null,
         tags: tagsArray.length > 0 ? tagsArray : null,
-        isFavorite: formData.isFavorite,
+        isFavorite: data.isFavorite,
       };
 
-      await onSave(data);
-      onClose();
-    } catch (error) {
-      console.error("Failed to save journal entry:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      await onSave(payload);
+    },
+  });
 
   const shipOptions = ships
     .map((ship) => ({

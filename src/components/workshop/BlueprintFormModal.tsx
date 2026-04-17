@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
 import { Modal, ModalFooter, Button, Input, Textarea, Select } from "../ui";
 import { Plus, X } from "lucide-react";
 import { formatDateTimeLocal } from "../../lib/format";
+import { useEntityForm } from "../../lib/useEntityForm";
 import type {
   Blueprint,
   BlueprintIngredient,
@@ -41,80 +41,47 @@ export function BlueprintFormModal({
   blueprint,
   locations,
 }: BlueprintFormModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    category: "component",
-    outputQuantity: "1",
-    obtainedAt: formatDateTimeLocal(new Date()),
-    locationId: "",
-    notes: "",
-  });
-  const [ingredients, setIngredients] = useState<IngredientForm[]>([]);
-
-  useEffect(() => {
-    if (blueprint) {
-      setFormData({
-        name: blueprint.name,
-        description: blueprint.description || "",
-        category: blueprint.category || "component",
-        outputQuantity: (blueprint.outputQuantity ?? 1).toString(),
-        obtainedAt: blueprint.obtainedAt
-          ? formatDateTimeLocal(new Date(blueprint.obtainedAt))
-          : formatDateTimeLocal(new Date()),
-        locationId: blueprint.locationId || "",
-        notes: blueprint.notes || "",
-      });
-      setIngredients(
-        blueprint.ingredients.map((ing) => ({
-          materialName: ing.materialName,
-          quantityCscu: ing.quantityCscu.toString(),
-          minQuality: (ing.minQuality ?? 0).toString(),
-        }))
-      );
-    } else {
-      setFormData({
-        name: "",
-        description: "",
-        category: "component",
-        outputQuantity: "1",
-        obtainedAt: formatDateTimeLocal(new Date()),
-        locationId: "",
-        notes: "",
-      });
-      setIngredients([]);
-    }
-  }, [blueprint, isOpen]);
-
-  const addIngredient = () => {
-    setIngredients([...ingredients, { materialName: "", quantityCscu: "", minQuality: "0" }]);
-  };
-
-  const removeIngredient = (index: number) => {
-    setIngredients(ingredients.filter((_, i) => i !== index));
-  };
-
-  const updateIngredient = (index: number, field: keyof IngredientForm, value: string) => {
-    const updated = [...ingredients];
-    updated[index] = { ...updated[index], [field]: value };
-    setIngredients(updated);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const data: CreateBlueprintInput | UpdateBlueprintInput = {
-        name: formData.name,
-        description: formData.description || null,
-        category: formData.category || null,
-        outputQuantity: parseInt(formData.outputQuantity) || 1,
-        obtainedAt: formData.obtainedAt ? new Date(formData.obtainedAt) : null,
-        locationId: formData.locationId || null,
-        notes: formData.notes || null,
-        ingredients: ingredients
+  const { formData, setFormData, loading, handleSubmit } = useEntityForm({
+    entity: blueprint,
+    isOpen,
+    onClose,
+    errorLabel: "blueprint",
+    defaultFormData: {
+      name: "",
+      description: "",
+      category: "component",
+      outputQuantity: "1",
+      obtainedAt: formatDateTimeLocal(new Date()),
+      locationId: "",
+      notes: "",
+      ingredients: [] as IngredientForm[],
+    },
+    toFormData: (bp: Blueprint & { ingredients: BlueprintIngredient[] }) => ({
+      name: bp.name,
+      description: bp.description || "",
+      category: bp.category || "component",
+      outputQuantity: (bp.outputQuantity ?? 1).toString(),
+      obtainedAt: bp.obtainedAt
+        ? formatDateTimeLocal(new Date(bp.obtainedAt))
+        : formatDateTimeLocal(new Date()),
+      locationId: bp.locationId || "",
+      notes: bp.notes || "",
+      ingredients: bp.ingredients.map((ing) => ({
+        materialName: ing.materialName,
+        quantityCscu: ing.quantityCscu.toString(),
+        minQuality: (ing.minQuality ?? 0).toString(),
+      })),
+    }),
+    onSubmit: async (data) => {
+      const payload: CreateBlueprintInput | UpdateBlueprintInput = {
+        name: data.name,
+        description: data.description || null,
+        category: data.category || null,
+        outputQuantity: parseInt(data.outputQuantity) || 1,
+        obtainedAt: data.obtainedAt ? new Date(data.obtainedAt) : null,
+        locationId: data.locationId || null,
+        notes: data.notes || null,
+        ingredients: data.ingredients
           .filter((ing) => ing.materialName.trim())
           .map((ing) => ({
             materialName: ing.materialName.trim(),
@@ -123,14 +90,36 @@ export function BlueprintFormModal({
           })),
       };
 
-      await onSave(data);
-      onClose();
-    } catch (error) {
-      console.error("Failed to save blueprint:", error);
-    } finally {
-      setLoading(false);
-    }
+      await onSave(payload);
+    },
+  });
+
+  const addIngredient = () => {
+    setFormData((prev) => ({
+      ...prev,
+      ingredients: [
+        ...prev.ingredients,
+        { materialName: "", quantityCscu: "", minQuality: "0" },
+      ],
+    }));
   };
+
+  const removeIngredient = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      ingredients: prev.ingredients.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateIngredient = (index: number, field: keyof IngredientForm, value: string) => {
+    setFormData((prev) => {
+      const updated = [...prev.ingredients];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, ingredients: updated };
+    });
+  };
+
+  const ingredients = formData.ingredients;
 
   const locationOptions = locations
     .map((loc) => ({

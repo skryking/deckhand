@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
 import { Modal, ModalFooter, Button, Input, Textarea, Select } from "../ui";
+import { useEntityForm } from "../../lib/useEntityForm";
 import type {
   InventoryItem,
   CreateInventoryItemInput,
@@ -42,68 +42,45 @@ export function InventoryFormModal({
   ships,
   locations,
 }: InventoryFormModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    materialName: "",
-    category: "mineral",
-    source: "mined",
-    quantityCscu: "",
-    quality: "",
-    locationId: "",
-    shipId: "",
-    notes: "",
-  });
-
-  useEffect(() => {
-    if (item) {
-      setFormData({
-        materialName: item.materialName,
-        category: item.category || "mineral",
-        source: item.source || "mined",
-        quantityCscu: item.quantityCscu.toString(),
-        quality: item.quality.toString(),
-        locationId: item.locationId || "",
-        shipId: item.shipId || "",
-        notes: item.notes || "",
-      });
-    } else {
-      setFormData({
-        materialName: "",
-        category: "mineral",
-        source: "mined",
-        quantityCscu: "",
-        quality: "",
-        locationId: "",
-        shipId: "",
-        notes: "",
-      });
-    }
-  }, [item, isOpen]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const data: CreateInventoryItemInput | UpdateInventoryItemInput = {
-        materialName: formData.materialName,
-        category: formData.category || null,
-        source: formData.source || null,
-        quantityCscu: parseInt(formData.quantityCscu) || 0,
-        quality: parseInt(formData.quality) || 0,
-        locationId: formData.locationId || null,
-        shipId: formData.shipId || null,
-        notes: formData.notes || null,
+  const { formData, setFormData, loading, handleSubmit } = useEntityForm({
+    entity: item,
+    isOpen,
+    onClose,
+    errorLabel: "inventory item",
+    defaultFormData: {
+      materialName: "",
+      category: "mineral",
+      source: "mined",
+      quantityCscu: "",
+      quality: "",
+      locationId: "",
+      shipId: "",
+      notes: "",
+    },
+    toFormData: (i: InventoryItem) => ({
+      materialName: i.materialName,
+      category: i.category || "mineral",
+      source: i.source || "mined",
+      quantityCscu: i.quantityCscu.toString(),
+      quality: i.quality.toString(),
+      locationId: i.locationId || "",
+      shipId: i.shipId || "",
+      notes: i.notes || "",
+    }),
+    onSubmit: async (data) => {
+      const payload: CreateInventoryItemInput | UpdateInventoryItemInput = {
+        materialName: data.materialName,
+        category: data.category || null,
+        source: data.source || null,
+        quantityCscu: parseInt(data.quantityCscu) || 0,
+        quality: parseInt(data.quality) || 0,
+        locationId: data.locationId || null,
+        shipId: data.shipId || null,
+        notes: data.notes || null,
       };
-
-      await onSave(data);
-      onClose();
-    } catch (error) {
-      console.error("Failed to save inventory item:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      await onSave(payload);
+    },
+  });
 
   const shipOptions = ships
     .map((ship) => ({

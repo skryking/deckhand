@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
 import { Modal, ModalFooter, Button, Input, Textarea, Select } from "../ui";
 import { formatDateTimeLocal } from "../../lib/format";
+import { useEntityForm } from "../../lib/useEntityForm";
 import type {
   Mission,
   CreateMissionInput,
@@ -44,90 +44,64 @@ export function MissionModal({
   ships,
   locations,
 }: MissionModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    missionType: "bounty",
-    contractor: "",
-    reward: "",
-    status: "active",
-    locationId: "",
-    shipId: "",
-    notes: "",
-    acceptedAt: formatDateTimeLocal(new Date()),
-  });
-
-  useEffect(() => {
-    if (mission) {
-      setFormData({
-        title: mission.title,
-        description: mission.description || "",
-        missionType: mission.missionType || "bounty",
-        contractor: mission.contractor || "",
-        reward: mission.reward?.toString() || "",
-        status: mission.status || "active",
-        locationId: mission.locationId || "",
-        shipId: mission.shipId || "",
-        notes: mission.notes || "",
-        acceptedAt: formatDateTimeLocal(
-          new Date(mission.acceptedAt || Date.now())
-        ),
-      });
-    } else {
-      setFormData({
-        title: "",
-        description: "",
-        missionType: "bounty",
-        contractor: "",
-        reward: "",
-        status: "active",
-        locationId: "",
-        shipId: "",
-        notes: "",
-        acceptedAt: formatDateTimeLocal(new Date()),
-      });
-    }
-  }, [mission, isOpen]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
+  const { formData, setFormData, loading, handleSubmit } = useEntityForm({
+    entity: mission,
+    isOpen,
+    onClose,
+    errorLabel: "mission",
+    defaultFormData: {
+      title: "",
+      description: "",
+      missionType: "bounty",
+      contractor: "",
+      reward: "",
+      status: "active",
+      locationId: "",
+      shipId: "",
+      notes: "",
+      acceptedAt: formatDateTimeLocal(new Date()),
+    },
+    toFormData: (m: Mission) => ({
+      title: m.title,
+      description: m.description || "",
+      missionType: m.missionType || "bounty",
+      contractor: m.contractor || "",
+      reward: m.reward?.toString() || "",
+      status: m.status || "active",
+      locationId: m.locationId || "",
+      shipId: m.shipId || "",
+      notes: m.notes || "",
+      acceptedAt: formatDateTimeLocal(new Date(m.acceptedAt || Date.now())),
+    }),
+    onSubmit: async (data) => {
       let completedAt: Date | null = mission?.completedAt
         ? new Date(mission.completedAt)
         : null;
 
       if (
-        (formData.status === "completed" || formData.status === "failed") &&
+        (data.status === "completed" || data.status === "failed") &&
         !completedAt
       ) {
         completedAt = new Date();
       }
 
-      const data: CreateMissionInput | UpdateMissionInput = {
-        title: formData.title,
-        description: formData.description || null,
-        missionType: formData.missionType || null,
-        contractor: formData.contractor || null,
-        reward: formData.reward ? parseInt(formData.reward) : null,
-        status: formData.status,
-        acceptedAt: new Date(formData.acceptedAt),
+      const payload: CreateMissionInput | UpdateMissionInput = {
+        title: data.title,
+        description: data.description || null,
+        missionType: data.missionType || null,
+        contractor: data.contractor || null,
+        reward: data.reward ? parseInt(data.reward) : null,
+        status: data.status,
+        acceptedAt: new Date(data.acceptedAt),
         completedAt,
-        locationId: formData.locationId || null,
-        shipId: formData.shipId || null,
-        notes: formData.notes || null,
+        locationId: data.locationId || null,
+        shipId: data.shipId || null,
+        notes: data.notes || null,
       };
 
-      await onSave(data);
-      onClose();
-    } catch (error) {
-      console.error("Failed to save mission:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      await onSave(payload);
+    },
+  });
 
   const shipOptions = ships
     .map((ship) => ({

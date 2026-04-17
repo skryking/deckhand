@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
 import { Modal, ModalFooter, Button, Input, Textarea, Select } from "../ui";
 import { formatDateTimeLocal } from "../../lib/format";
+import { useEntityForm } from "../../lib/useEntityForm";
 import type {
   CargoRun,
   CreateCargoRunInput,
@@ -34,94 +34,68 @@ export function CargoRunModal({
   ships,
   locations,
 }: CargoRunModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    commodity: "",
-    quantity: "",
-    buyPrice: "",
-    sellPrice: "",
-    originLocationId: "",
-    destinationLocationId: "",
-    shipId: "",
-    status: "in_progress",
-    notes: "",
-    startedAt: formatDateTimeLocal(new Date()),
-  });
-
-  useEffect(() => {
-    if (cargoRun) {
-      setFormData({
-        commodity: cargoRun.commodity,
-        quantity: cargoRun.quantity.toString(),
-        buyPrice: cargoRun.buyPrice.toString(),
-        sellPrice: cargoRun.sellPrice?.toString() || "",
-        originLocationId: cargoRun.originLocationId || "",
-        destinationLocationId: cargoRun.destinationLocationId || "",
-        shipId: cargoRun.shipId || "",
-        status: cargoRun.status || "in_progress",
-        notes: cargoRun.notes || "",
-        startedAt: formatDateTimeLocal(new Date(cargoRun.startedAt)),
-      });
-    } else {
-      setFormData({
-        commodity: "",
-        quantity: "",
-        buyPrice: "",
-        sellPrice: "",
-        originLocationId: "",
-        destinationLocationId: "",
-        shipId: "",
-        status: "in_progress",
-        notes: "",
-        startedAt: formatDateTimeLocal(new Date()),
-      });
-    }
-  }, [cargoRun, isOpen]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const quantity = parseInt(formData.quantity) || 0;
-      const buyPrice = parseInt(formData.buyPrice) || 0;
-      const sellPrice = formData.sellPrice
-        ? parseInt(formData.sellPrice)
-        : null;
+  const { formData, setFormData, loading, handleSubmit } = useEntityForm({
+    entity: cargoRun,
+    isOpen,
+    onClose,
+    errorLabel: "cargo run",
+    defaultFormData: {
+      commodity: "",
+      quantity: "",
+      buyPrice: "",
+      sellPrice: "",
+      originLocationId: "",
+      destinationLocationId: "",
+      shipId: "",
+      status: "in_progress",
+      notes: "",
+      startedAt: formatDateTimeLocal(new Date()),
+    },
+    toFormData: (r: CargoRun) => ({
+      commodity: r.commodity,
+      quantity: r.quantity.toString(),
+      buyPrice: r.buyPrice.toString(),
+      sellPrice: r.sellPrice?.toString() || "",
+      originLocationId: r.originLocationId || "",
+      destinationLocationId: r.destinationLocationId || "",
+      shipId: r.shipId || "",
+      status: r.status || "in_progress",
+      notes: r.notes || "",
+      startedAt: formatDateTimeLocal(new Date(r.startedAt)),
+    }),
+    onSubmit: async (data) => {
+      const quantity = parseInt(data.quantity) || 0;
+      const buyPrice = parseInt(data.buyPrice) || 0;
+      const sellPrice = data.sellPrice ? parseInt(data.sellPrice) : null;
 
       let profit: number | null = null;
       let completedAt: Date | null = cargoRun?.completedAt
         ? new Date(cargoRun.completedAt)
         : null;
 
-      if (formData.status === "completed" && sellPrice !== null) {
+      if (data.status === "completed" && sellPrice !== null) {
         profit = sellPrice * quantity - buyPrice * quantity;
         if (!completedAt) completedAt = new Date();
       }
 
-      const data: CreateCargoRunInput | UpdateCargoRunInput = {
-        startedAt: new Date(formData.startedAt),
+      const payload: CreateCargoRunInput | UpdateCargoRunInput = {
+        startedAt: new Date(data.startedAt),
         completedAt,
-        commodity: formData.commodity,
+        commodity: data.commodity,
         quantity,
         buyPrice,
         sellPrice,
         profit,
-        originLocationId: formData.originLocationId || null,
-        destinationLocationId: formData.destinationLocationId || null,
-        shipId: formData.shipId || null,
-        status: formData.status,
-        notes: formData.notes || null,
+        originLocationId: data.originLocationId || null,
+        destinationLocationId: data.destinationLocationId || null,
+        shipId: data.shipId || null,
+        status: data.status,
+        notes: data.notes || null,
       };
 
-      await onSave(data);
-      onClose();
-    } catch (error) {
-      console.error("Failed to save cargo run:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      await onSave(payload);
+    },
+  });
 
   const shipOptions = ships
     .map((ship) => ({

@@ -8,11 +8,10 @@ interface SessionState {
   elapsedSeconds: number
   paused: boolean
   loading: boolean
-  // Accumulated seconds from previous running segments (before pauses)
-  _accumulatedSeconds: number
-  // Timestamp (ms) when the current running segment started
-  _segmentStart: number | null
-  _intervalId: ReturnType<typeof setInterval> | null
+  // Seconds accumulated from previously running segments (before pauses).
+  accumulatedSeconds: number
+  // Timestamp (ms) when the current running segment started, or null when paused/stopped.
+  segmentStart: number | null
 
   initialize: () => Promise<void>
   start: (startingBalance?: number) => Promise<void>
@@ -20,9 +19,6 @@ interface SessionState {
   pause: () => void
   resume: () => void
   reset: () => Promise<void>
-  _tick: () => void
-  _startTimer: () => void
-  _stopTimer: () => void
 }
 
 export const useSession = create<SessionState>((set, get) => ({
@@ -30,24 +26,21 @@ export const useSession = create<SessionState>((set, get) => ({
   elapsedSeconds: 0,
   paused: false,
   loading: false,
-  _accumulatedSeconds: 0,
-  _segmentStart: null,
-  _intervalId: null,
+  accumulatedSeconds: 0,
+  segmentStart: null,
 
   initialize: async () => {
     try {
       const session = await sessionsApi.getActive()
       if (session) {
         const start = new Date(session.startedAt).getTime()
-        const elapsed = Math.floor((Date.now() - start) / 1000)
         set({
           activeSession: session,
-          elapsedSeconds: elapsed,
+          elapsedSeconds: Math.floor((Date.now() - start) / 1000),
           paused: false,
-          _accumulatedSeconds: 0,
-          _segmentStart: start,
+          accumulatedSeconds: 0,
+          segmentStart: start,
         })
-        get()._startTimer()
       }
     } catch {
       // No active session
@@ -63,10 +56,9 @@ export const useSession = create<SessionState>((set, get) => ({
         elapsedSeconds: 0,
         paused: false,
         loading: false,
-        _accumulatedSeconds: 0,
-        _segmentStart: Date.now(),
+        accumulatedSeconds: 0,
+        segmentStart: Date.now(),
       })
-      get()._startTimer()
     } catch {
       set({ loading: false })
     }
@@ -78,14 +70,13 @@ export const useSession = create<SessionState>((set, get) => ({
     set({ loading: true })
     try {
       await sessionsApi.end(activeSession.id, endingBalance)
-      get()._stopTimer()
       set({
         activeSession: null,
         elapsedSeconds: 0,
         paused: false,
         loading: false,
-        _accumulatedSeconds: 0,
-        _segmentStart: null,
+        accumulatedSeconds: 0,
+        segmentStart: null,
       })
       useRefresh.getState().invalidateSessions()
     } catch {
@@ -94,16 +85,15 @@ export const useSession = create<SessionState>((set, get) => ({
   },
 
   pause: () => {
-    const { activeSession, _accumulatedSeconds, _segmentStart } = get()
-    if (!activeSession || !_segmentStart) return
-    const segmentElapsed = Math.floor((Date.now() - _segmentStart) / 1000)
-    const total = _accumulatedSeconds + segmentElapsed
-    get()._stopTimer()
+    const { activeSession, accumulatedSeconds, segmentStart } = get()
+    if (!activeSession || !segmentStart) return
+    const segmentElapsed = Math.floor((Date.now() - segmentStart) / 1000)
+    const total = accumulatedSeconds + segmentElapsed
     set({
       paused: true,
       elapsedSeconds: total,
-      _accumulatedSeconds: total,
-      _segmentStart: null,
+      accumulatedSeconds: total,
+      segmentStart: null,
     })
   },
 
@@ -112,9 +102,8 @@ export const useSession = create<SessionState>((set, get) => ({
     if (!activeSession || !paused) return
     set({
       paused: false,
-      _segmentStart: Date.now(),
+      segmentStart: Date.now(),
     })
-    get()._startTimer()
   },
 
   reset: async () => {
@@ -129,34 +118,12 @@ export const useSession = create<SessionState>((set, get) => ({
         elapsedSeconds: 0,
         paused: false,
         loading: false,
-        _accumulatedSeconds: 0,
-        _segmentStart: Date.now(),
+        accumulatedSeconds: 0,
+        segmentStart: Date.now(),
       })
       useRefresh.getState().invalidateSessions()
     } catch {
       set({ loading: false })
-    }
-  },
-
-  _tick: () => {
-    const { _accumulatedSeconds, _segmentStart } = get()
-    if (_segmentStart) {
-      const segmentElapsed = Math.floor((Date.now() - _segmentStart) / 1000)
-      set({ elapsedSeconds: _accumulatedSeconds + segmentElapsed })
-    }
-  },
-
-  _startTimer: () => {
-    get()._stopTimer()
-    const id = setInterval(() => get()._tick(), 1000)
-    set({ _intervalId: id })
-  },
-
-  _stopTimer: () => {
-    const { _intervalId } = get()
-    if (_intervalId) {
-      clearInterval(_intervalId)
-      set({ _intervalId: null })
     }
   },
 }))

@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
 import { Modal, ModalFooter, Button, Input, Textarea, Select } from "../ui";
+import { useEntityForm } from "../../lib/useEntityForm";
 import type {
   Location,
   CreateLocationInput,
@@ -71,101 +71,73 @@ export function LocationModal({
   location,
   locations,
 }: LocationModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    type: "",
-    parentId: "",
-    services: [] as string[],
-    notes: "",
-    wikiUrl: "",
-    isFavorite: false,
-    coordX: "" as string | number,
-    coordXUnit: "km" as "km" | "m",
-    coordY: "" as string | number,
-    coordYUnit: "km" as "km" | "m",
-    coordZ: "" as string | number,
-    coordZUnit: "km" as "km" | "m",
-  });
-
-  useEffect(() => {
-    if (location) {
-      setFormData({
-        name: location.name || "",
-        type: location.type || "",
-        parentId: location.parentId || "",
-        services: location.services || [],
-        notes: location.notes || "",
-        wikiUrl: location.wikiUrl || "",
-        isFavorite: location.isFavorite || false,
-        coordX: location.coordX ?? "",
-        coordXUnit: location.coordXUnit || "km",
-        coordY: location.coordY ?? "",
-        coordYUnit: location.coordYUnit || "km",
-        coordZ: location.coordZ ?? "",
-        coordZUnit: location.coordZUnit || "km",
-      });
-    } else {
-      setFormData({
-        name: "",
-        type: "",
-        parentId: "",
-        services: [],
-        notes: "",
-        wikiUrl: "",
-        isFavorite: false,
-        coordX: "",
-        coordXUnit: "km",
-        coordY: "",
-        coordYUnit: "km",
-        coordZ: "",
-        coordZUnit: "km",
-      });
-    }
-  }, [location, isOpen]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      // Parse coordinate values - empty string becomes null
+  const { formData, setFormData, loading, handleSubmit } = useEntityForm({
+    entity: location,
+    isOpen,
+    onClose,
+    errorLabel: "location",
+    defaultFormData: {
+      name: "",
+      type: "",
+      parentId: "",
+      services: [] as string[],
+      notes: "",
+      wikiUrl: "",
+      isFavorite: false,
+      coordX: "" as string | number,
+      coordXUnit: "km" as "km" | "m",
+      coordY: "" as string | number,
+      coordYUnit: "km" as "km" | "m",
+      coordZ: "" as string | number,
+      coordZUnit: "km" as "km" | "m",
+    },
+    toFormData: (loc: Location) => ({
+      name: loc.name || "",
+      type: loc.type || "",
+      parentId: loc.parentId || "",
+      services: loc.services || [],
+      notes: loc.notes || "",
+      wikiUrl: loc.wikiUrl || "",
+      isFavorite: loc.isFavorite || false,
+      coordX: (loc.coordX ?? "") as string | number,
+      coordXUnit: loc.coordXUnit || "km",
+      coordY: (loc.coordY ?? "") as string | number,
+      coordYUnit: loc.coordYUnit || "km",
+      coordZ: (loc.coordZ ?? "") as string | number,
+      coordZUnit: loc.coordZUnit || "km",
+    }),
+    onSubmit: async (data) => {
       const parseCoord = (val: string | number): number | null => {
         if (val === "" || val === null || val === undefined) return null;
         const num = typeof val === "string" ? parseFloat(val) : val;
         return isNaN(num) ? null : num;
       };
 
-      const coordX = parseCoord(formData.coordX);
-      const coordY = parseCoord(formData.coordY);
-      const coordZ = parseCoord(formData.coordZ);
+      const coordX = parseCoord(data.coordX);
+      const coordY = parseCoord(data.coordY);
+      const coordZ = parseCoord(data.coordZ);
 
-      const data: CreateLocationInput | UpdateLocationInput = {
-        name: formData.name,
-        type: formData.type || null,
-        parentId: formData.parentId || null,
-        services: formData.services.length > 0 ? formData.services : null,
-        notes: formData.notes || null,
-        wikiUrl: formData.wikiUrl || null,
-        isFavorite: formData.isFavorite,
+      const payload: CreateLocationInput | UpdateLocationInput = {
+        name: data.name,
+        type: data.type || null,
+        parentId: data.parentId || null,
+        services: data.services.length > 0 ? data.services : null,
+        notes: data.notes || null,
+        wikiUrl: data.wikiUrl || null,
+        isFavorite: data.isFavorite,
         firstVisitedAt: location?.firstVisitedAt || new Date(),
         visitCount: location?.visitCount || 0,
         coordX,
-        coordXUnit: coordX !== null ? formData.coordXUnit : null,
+        coordXUnit: coordX !== null ? data.coordXUnit : null,
         coordY,
-        coordYUnit: coordY !== null ? formData.coordYUnit : null,
+        coordYUnit: coordY !== null ? data.coordYUnit : null,
         coordZ,
-        coordZUnit: coordZ !== null ? formData.coordZUnit : null,
+        coordZUnit: coordZ !== null ? data.coordZUnit : null,
       };
 
-      await onSave(data);
-      onClose();
-    } catch (error) {
-      console.error("Failed to save location:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      await onSave(payload);
+    },
+  });
 
   const toggleService = (service: string) => {
     setFormData((prev) => ({

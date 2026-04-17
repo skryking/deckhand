@@ -1,6 +1,19 @@
-import { useState, useEffect } from "react";
 import { Modal, ModalFooter, Button, Input, Textarea, Select } from "../ui";
+import { useEntityForm } from "../../lib/useEntityForm";
 import type { Ship, CreateShipInput, UpdateShipInput } from "../../types/database";
+
+const emptyForm = {
+  manufacturer: "",
+  model: "",
+  nickname: "",
+  variant: "",
+  role: "",
+  acquiredAt: "",
+  acquiredPrice: "",
+  notes: "",
+  wikiUrl: "",
+  isOwned: true,
+};
 
 interface ShipModalProps {
   isOpen: boolean;
@@ -23,81 +36,45 @@ const roleOptions = [
 ];
 
 export function ShipModal({ isOpen, onClose, onSave, ship }: ShipModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    manufacturer: "",
-    model: "",
-    nickname: "",
-    variant: "",
-    role: "",
-    acquiredAt: "",
-    acquiredPrice: "",
-    notes: "",
-    wikiUrl: "",
-    isOwned: true,
-  });
-
-  useEffect(() => {
-    if (ship) {
-      setFormData({
-        manufacturer: ship.manufacturer || "",
-        model: ship.model || "",
-        nickname: ship.nickname || "",
-        variant: ship.variant || "",
-        role: ship.role || "",
-        acquiredAt: ship.acquiredAt
-          ? new Date(ship.acquiredAt).toISOString().split("T")[0]
-          : "",
-        acquiredPrice: ship.acquiredPrice?.toString() || "",
-        notes: ship.notes || "",
-        wikiUrl: ship.wikiUrl || "",
-        isOwned: ship.isOwned !== false,
-      });
-    } else {
-      setFormData({
-        manufacturer: "",
-        model: "",
-        nickname: "",
-        variant: "",
-        role: "",
-        acquiredAt: "",
-        acquiredPrice: "",
-        notes: "",
-        wikiUrl: "",
-        isOwned: true,
-      });
-    }
-  }, [ship, isOpen]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const data: CreateShipInput | UpdateShipInput = {
-        manufacturer: formData.manufacturer,
-        model: formData.model,
-        nickname: formData.nickname || null,
-        variant: formData.variant || null,
-        role: formData.role || null,
-        acquiredAt: formData.acquiredAt ? new Date(formData.acquiredAt) : null,
-        acquiredPrice: formData.acquiredPrice
-          ? parseInt(formData.acquiredPrice, 10)
+  const { formData, setFormData, loading, handleSubmit } = useEntityForm({
+    entity: ship,
+    isOpen,
+    onClose,
+    defaultFormData: emptyForm,
+    errorLabel: "ship",
+    toFormData: (s: Ship) => ({
+      manufacturer: s.manufacturer || "",
+      model: s.model || "",
+      nickname: s.nickname || "",
+      variant: s.variant || "",
+      role: s.role || "",
+      acquiredAt: s.acquiredAt
+        ? new Date(s.acquiredAt).toISOString().split("T")[0]
+        : "",
+      acquiredPrice: s.acquiredPrice?.toString() || "",
+      notes: s.notes || "",
+      wikiUrl: s.wikiUrl || "",
+      isOwned: s.isOwned !== false,
+    }),
+    onSubmit: async (data) => {
+      const payload: CreateShipInput | UpdateShipInput = {
+        manufacturer: data.manufacturer,
+        model: data.model,
+        nickname: data.nickname || null,
+        variant: data.variant || null,
+        role: data.role || null,
+        acquiredAt: data.acquiredAt ? new Date(data.acquiredAt) : null,
+        acquiredPrice: data.acquiredPrice
+          ? parseInt(data.acquiredPrice, 10)
           : null,
-        notes: formData.notes || null,
-        wikiUrl: formData.wikiUrl || null,
-        isOwned: formData.isOwned,
+        notes: data.notes || null,
+        wikiUrl: data.wikiUrl || null,
+        isOwned: data.isOwned,
         imagePath: null,
       };
-
-      await onSave(data);
-      onClose();
-    } catch (error) {
-      console.error("Failed to save ship:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      await onSave(payload);
+    },
+  });
 
   return (
     <Modal

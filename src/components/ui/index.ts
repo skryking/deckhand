@@ -3,6 +3,7 @@ export { Input, SearchInput } from "./Input";
 export { Card, StatCard, EntryCard } from "./Card";
 export { Modal, ModalFooter } from "./Modal";
 export { ConfirmDeleteModal } from "./ConfirmDeleteModal";
+export { FilterPill, FilterPillRow, type FilterPillVariant } from "./FilterPill";
 export { Textarea } from "./Textarea";
 export { Select } from "./Select";
 export { LinkedScreenshots } from "./LinkedScreenshots";

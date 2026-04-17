@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
 import { FolderOpen } from "lucide-react";
 import { Modal, ModalFooter, Button, Input, Textarea, Select } from "../ui";
 import { screenshotFilesApi } from "../../lib/screenshotFiles";
+import { useEntityForm } from "../../lib/useEntityForm";
 import type {
   Screenshot,
   CreateScreenshotInput,
@@ -29,68 +29,48 @@ export function ScreenshotModal({
   ships,
   locations,
 }: ScreenshotModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    filePath: "",
-    caption: "",
-    tags: "",
-    locationId: "",
-    shipId: "",
-    isFavorite: false,
-  });
-
-  useEffect(() => {
-    if (screenshot) {
-      setFormData({
-        filePath: screenshot.filePath,
-        caption: screenshot.caption || "",
-        tags: screenshot.tags?.join(", ") || "",
-        locationId: screenshot.locationId || "",
-        shipId: screenshot.shipId || "",
-        isFavorite: screenshot.isFavorite || false,
-      });
-    } else {
-      setFormData({
-        filePath: "",
-        caption: "",
-        tags: "",
-        locationId: "",
-        shipId: "",
-        isFavorite: false,
-      });
-    }
-  }, [screenshot, isOpen]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const tagsArray = formData.tags
+  const { formData, setFormData, loading, handleSubmit } = useEntityForm({
+    entity: screenshot,
+    isOpen,
+    onClose,
+    errorLabel: "screenshot",
+    defaultFormData: {
+      filePath: "",
+      caption: "",
+      tags: "",
+      locationId: "",
+      shipId: "",
+      isFavorite: false,
+    },
+    toFormData: (s: Screenshot) => ({
+      filePath: s.filePath,
+      caption: s.caption || "",
+      tags: s.tags?.join(", ") || "",
+      locationId: s.locationId || "",
+      shipId: s.shipId || "",
+      isFavorite: s.isFavorite || false,
+    }),
+    onSubmit: async (data) => {
+      const tagsArray = data.tags
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean);
 
-      const data: CreateScreenshotInput | UpdateScreenshotInput = {
-        filePath: formData.filePath,
+      const payload: CreateScreenshotInput | UpdateScreenshotInput = {
+        filePath: data.filePath,
         thumbnailPath: null,
         takenAt: screenshot?.takenAt ? new Date(screenshot.takenAt) : new Date(),
-        caption: formData.caption || null,
+        caption: data.caption || null,
         tags: tagsArray.length > 0 ? tagsArray : null,
-        locationId: formData.locationId || null,
-        shipId: formData.shipId || null,
+        locationId: data.locationId || null,
+        shipId: data.shipId || null,
         journalEntryId: screenshot?.journalEntryId || null,
-        isFavorite: formData.isFavorite,
+        isFavorite: data.isFavorite,
       };
 
-      await onSave(data);
-      onClose();
-    } catch (error) {
-      console.error("Failed to save screenshot:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      await onSave(payload);
+    },
+  });
 
   const shipOptions = ships
     .map((ship) => ({

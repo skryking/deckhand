@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { TitleBar, Sidebar, StatusBar } from "./components/layout";
-import { useNavigation, useRefresh, useSession } from "./stores";
+import { useNavigation, useRefresh, useSession, useSessionTicker } from "./stores";
 import { useBalance } from "./lib/db";
 import {
   HomeView,
@@ -26,6 +26,9 @@ function App() {
   useEffect(() => {
     initializeSession();
   }, [initializeSession]);
+
+  // Drive the per-second elapsed counter while a session is active.
+  useSessionTicker();
 
   // Refetch balance when it's invalidated
   useEffect(() => {

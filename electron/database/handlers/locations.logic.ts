@@ -1,6 +1,7 @@
-import { eq, and, isNotNull, desc } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { TestDB } from '../db-test-utils';
+import { getShipLocation } from './ships.logic';
 
 type DB = TestDB;
 
@@ -51,29 +52,14 @@ export function getShipsAtLocation(db: DB, locationId: string) {
   const shipsAtLocation = [];
 
   for (const ship of allShips) {
-    const latestEntry = db
-      .select({
-        locationId: schema.journalEntries.locationId,
-        timestamp: schema.journalEntries.timestamp,
-      })
-      .from(schema.journalEntries)
-      .where(
-        and(
-          eq(schema.journalEntries.shipId, ship.id),
-          isNotNull(schema.journalEntries.locationId)
-        )
-      )
-      .orderBy(desc(schema.journalEntries.timestamp))
-      .limit(1)
-      .get();
-
-    if (latestEntry && latestEntry.locationId === locationId) {
+    const current = getShipLocation(db, ship.id);
+    if (current && current.locationId === locationId) {
       shipsAtLocation.push({
         shipId: ship.id,
         shipName: ship.nickname || `${ship.manufacturer} ${ship.model}`,
         manufacturer: ship.manufacturer,
         model: ship.model,
-        lastSeenTimestamp: latestEntry.timestamp,
+        lastSeenTimestamp: current.timestamp,
       });
     }
   }

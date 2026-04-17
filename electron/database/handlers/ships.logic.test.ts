@@ -169,4 +169,159 @@ describe('location tracking', () => {
     const ship = createShip(db, { manufacturer: 'RSI', model: 'Aurora MR' });
     expect(getShipCurrentLocation(db, ship.id)).toBeNull();
   });
+
+  it('includes transactions as a source', () => {
+    const ship = createShip(db, { manufacturer: 'RSI', model: 'Aurora MR' });
+    const loc = db.insert(schema.locations).values({ name: 'Port Olisar' }).returning().get();
+
+    db.insert(schema.transactions).values({
+      timestamp: new Date('2024-06-01'),
+      amount: -100,
+      category: 'fuel',
+      shipId: ship.id,
+      locationId: loc.id,
+    }).run();
+
+    const current = getShipCurrentLocation(db, ship.id);
+    expect(current!.locationName).toBe('Port Olisar');
+  });
+
+  it('includes completed cargo run destination', () => {
+    const ship = createShip(db, { manufacturer: 'RSI', model: 'Aurora MR' });
+    const origin = db.insert(schema.locations).values({ name: 'Area18' }).returning().get();
+    const dest = db.insert(schema.locations).values({ name: 'Lorville' }).returning().get();
+
+    db.insert(schema.cargoRuns).values({
+      commodity: 'Laranite',
+      quantity: 10,
+      buyPrice: 100,
+      sellPrice: 150,
+      status: 'completed',
+      shipId: ship.id,
+      originLocationId: origin.id,
+      destinationLocationId: dest.id,
+      startedAt: new Date('2024-06-01'),
+      completedAt: new Date('2024-06-02'),
+    }).run();
+
+    const current = getShipCurrentLocation(db, ship.id);
+    expect(current!.locationName).toBe('Lorville');
+  });
+
+  it('includes cargo run origin at startedAt even while in progress', () => {
+    const ship = createShip(db, { manufacturer: 'RSI', model: 'Aurora MR' });
+    const origin = db.insert(schema.locations).values({ name: 'Area18' }).returning().get();
+
+    db.insert(schema.cargoRuns).values({
+      commodity: 'Laranite',
+      quantity: 10,
+      buyPrice: 100,
+      status: 'in_progress',
+      shipId: ship.id,
+      originLocationId: origin.id,
+      startedAt: new Date('2024-06-01'),
+    }).run();
+
+    const current = getShipCurrentLocation(db, ship.id);
+    expect(current!.locationName).toBe('Area18');
+  });
+
+  it('ignores unfinished cargo destination (no completedAt yet)', () => {
+    const ship = createShip(db, { manufacturer: 'RSI', model: 'Aurora MR' });
+    const origin = db.insert(schema.locations).values({ name: 'Area18' }).returning().get();
+    const dest = db.insert(schema.locations).values({ name: 'Lorville' }).returning().get();
+
+    db.insert(schema.cargoRuns).values({
+      commodity: 'Laranite',
+      quantity: 10,
+      buyPrice: 100,
+      status: 'in_progress',
+      shipId: ship.id,
+      originLocationId: origin.id,
+      destinationLocationId: dest.id,
+      startedAt: new Date('2024-06-01'),
+    }).run();
+
+    const current = getShipCurrentLocation(db, ship.id);
+    // Ship is at origin until the run completes
+    expect(current!.locationName).toBe('Area18');
+  });
+
+  it('includes completed mission location', () => {
+    const ship = createShip(db, { manufacturer: 'RSI', model: 'Aurora MR' });
+    const loc = db.insert(schema.locations).values({ name: 'Grim Hex' }).returning().get();
+
+    db.insert(schema.missions).values({
+      title: 'Bounty',
+      status: 'completed',
+      shipId: ship.id,
+      locationId: loc.id,
+      acceptedAt: new Date('2024-06-01'),
+      completedAt: new Date('2024-06-02'),
+    }).run();
+
+    const current = getShipCurrentLocation(db, ship.id);
+    expect(current!.locationName).toBe('Grim Hex');
+  });
+
+  it('ignores active missions (only completed ones contribute)', () => {
+    const ship = createShip(db, { manufacturer: 'RSI', model: 'Aurora MR' });
+    const missionLoc = db.insert(schema.locations).values({ name: 'Grim Hex' }).returning().get();
+    const journalLoc = db.insert(schema.locations).values({ name: 'Port Olisar' }).returning().get();
+
+    db.insert(schema.missions).values({
+      title: 'Bounty',
+      status: 'active',
+      shipId: ship.id,
+      locationId: missionLoc.id,
+      acceptedAt: new Date('2024-06-05'),
+    }).run();
+    db.insert(schema.journalEntries).values({
+      content: 'Docked',
+      shipId: ship.id,
+      locationId: journalLoc.id,
+      timestamp: new Date('2024-06-01'),
+    }).run();
+
+    const current = getShipCurrentLocation(db, ship.id);
+    expect(current!.locationName).toBe('Port Olisar');
+  });
+
+  it('latest event across all sources wins', () => {
+    const ship = createShip(db, { manufacturer: 'RSI', model: 'Aurora MR' });
+    const journalLoc = db.insert(schema.locations).values({ name: 'Port Olisar' }).returning().get();
+    const cargoDest = db.insert(schema.locations).values({ name: 'Lorville' }).returning().get();
+    const missionLoc = db.insert(schema.locations).values({ name: 'Grim Hex' }).returning().get();
+
+    db.insert(schema.journalEntries).values({
+      content: 'Docked',
+      shipId: ship.id,
+      locationId: journalLoc.id,
+      timestamp: new Date('2024-06-01'),
+    }).run();
+    db.insert(schema.cargoRuns).values({
+      commodity: 'Laranite',
+      quantity: 10,
+      buyPrice: 100,
+      sellPrice: 150,
+      status: 'completed',
+      shipId: ship.id,
+      destinationLocationId: cargoDest.id,
+      startedAt: new Date('2024-06-02'),
+      completedAt: new Date('2024-06-03'),
+    }).run();
+    db.insert(schema.missions).values({
+      title: 'Bounty',
+      status: 'completed',
+      shipId: ship.id,
+      locationId: missionLoc.id,
+      acceptedAt: new Date('2024-06-04'),
+      completedAt: new Date('2024-06-05'),
+    }).run();
+
+    const current = getShipCurrentLocation(db, ship.id);
+    expect(current!.locationName).toBe('Grim Hex');
+    expect(current!.timestamp).toBeInstanceOf(Date);
+    expect(current!.timestamp.getTime()).toBe(new Date('2024-06-05').getTime());
+  });
 });

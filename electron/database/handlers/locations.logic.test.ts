@@ -105,4 +105,45 @@ describe('getShipsAtLocation', () => {
     const loc = createLocation(db, { name: 'Empty Station' });
     expect(getShipsAtLocation(db, loc.id)).toHaveLength(0);
   });
+
+  it('finds ship whose latest event is a completed cargo run destination', () => {
+    const origin = createLocation(db, { name: 'Area18' });
+    const dest = createLocation(db, { name: 'Lorville' });
+    const ship = db.insert(schema.ships).values({ manufacturer: 'RSI', model: 'Aurora' }).returning().get();
+
+    db.insert(schema.cargoRuns).values({
+      commodity: 'Laranite',
+      quantity: 10,
+      buyPrice: 100,
+      sellPrice: 150,
+      status: 'completed',
+      shipId: ship.id,
+      originLocationId: origin.id,
+      destinationLocationId: dest.id,
+      startedAt: new Date('2024-06-01'),
+      completedAt: new Date('2024-06-02'),
+    }).run();
+
+    const ships = getShipsAtLocation(db, dest.id);
+    expect(ships).toHaveLength(1);
+    expect(ships[0].shipId).toBe(ship.id);
+  });
+
+  it('finds ship whose latest event is a completed mission', () => {
+    const loc = createLocation(db, { name: 'Grim Hex' });
+    const ship = db.insert(schema.ships).values({ manufacturer: 'RSI', model: 'Aurora' }).returning().get();
+
+    db.insert(schema.missions).values({
+      title: 'Bounty',
+      status: 'completed',
+      shipId: ship.id,
+      locationId: loc.id,
+      acceptedAt: new Date('2024-06-01'),
+      completedAt: new Date('2024-06-02'),
+    }).run();
+
+    const ships = getShipsAtLocation(db, loc.id);
+    expect(ships).toHaveLength(1);
+    expect(ships[0].shipId).toBe(ship.id);
+  });
 });

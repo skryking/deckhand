@@ -80,24 +80,77 @@ export function deleteShip(db: DB, id: string) {
   });
 }
 
-export function getShipCurrentLocation(db: DB, shipId: string) {
-  // Check both journal entries and transactions for the most recent location
-  const result = db.all(sql`
+export type ShipLocationSnapshot = {
+  locationId: string;
+  locationName: string;
+  timestamp: Date;
+};
+
+// Single source of truth for "where is this ship?" — unions every event type that
+// implies the ship was at a given location, returning the latest.
+//   - journal entries: shipId + locationId + timestamp
+//   - transactions:    shipId + locationId + timestamp
+//   - cargo runs:      origin at startedAt; destination at completedAt (completed only)
+//   - missions:        locationId at completedAt (completed only)
+export function getShipLocation(db: DB, shipId: string): ShipLocationSnapshot | null {
+  const rows = db.all(sql`
     SELECT location_id AS locationId, name AS locationName, timestamp
     FROM (
       SELECT je.location_id, l.name, je.timestamp
       FROM journal_entries je
       INNER JOIN locations l ON je.location_id = l.id
       WHERE je.ship_id = ${shipId} AND je.location_id IS NOT NULL
+
       UNION ALL
+
       SELECT t.location_id, l.name, t.timestamp
       FROM transactions t
       INNER JOIN locations l ON t.location_id = l.id
       WHERE t.ship_id = ${shipId} AND t.location_id IS NOT NULL
+
+      UNION ALL
+
+      SELECT cr.origin_location_id, l.name, cr.started_at AS timestamp
+      FROM cargo_runs cr
+      INNER JOIN locations l ON cr.origin_location_id = l.id
+      WHERE cr.ship_id = ${shipId} AND cr.origin_location_id IS NOT NULL
+
+      UNION ALL
+
+      SELECT cr.destination_location_id, l.name, cr.completed_at AS timestamp
+      FROM cargo_runs cr
+      INNER JOIN locations l ON cr.destination_location_id = l.id
+      WHERE cr.ship_id = ${shipId}
+        AND cr.destination_location_id IS NOT NULL
+        AND cr.status = 'completed'
+        AND cr.completed_at IS NOT NULL
+
+      UNION ALL
+
+      SELECT m.location_id, l.name, m.completed_at AS timestamp
+      FROM missions m
+      INNER JOIN locations l ON m.location_id = l.id
+      WHERE m.ship_id = ${shipId}
+        AND m.location_id IS NOT NULL
+        AND m.status = 'completed'
+        AND m.completed_at IS NOT NULL
     )
     ORDER BY timestamp DESC
     LIMIT 1
-  `);
-  return result.length > 0 ? result[0] as { locationId: string; locationName: string; timestamp: Date } : null;
+  `) as Array<{ locationId: string; locationName: string; timestamp: number }>;
+
+  if (rows.length === 0) return null;
+
+  const row = rows[0];
+  return {
+    locationId: row.locationId,
+    locationName: row.locationName,
+    // Drizzle stores integer timestamps as unix seconds; raw SQL bypasses the Date conversion.
+    timestamp: new Date(row.timestamp * 1000),
+  };
+}
+
+export function getShipCurrentLocation(db: DB, shipId: string) {
+  return getShipLocation(db, shipId);
 }
 

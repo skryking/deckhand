@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { Hammer, Plus } from 'lucide-react'
 import { Button, SearchInput, StatCard, ConfirmDeleteModal } from '../components/ui'
 import { BlueprintFormModal, BlueprintCard } from '../components/workshop'
-import { useBlueprintCraftability, useLocations } from '../lib/db'
+import { useBlueprintCraftability, useLocations, invalidateQueries } from '../lib/db'
 import { blueprintsApi } from '../lib/db/api'
 import type {
   Blueprint,
@@ -15,7 +15,7 @@ import type {
 type CraftFilter = 'all' | 'craftable' | 'missing'
 
 export function WorkshopView() {
-  const { data: craftability, loading, refetch } = useBlueprintCraftability()
+  const { data: craftability, loading } = useBlueprintCraftability()
   const { data: locations } = useLocations()
 
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -68,7 +68,7 @@ export function WorkshopView() {
     } else {
       await blueprintsApi.create(data as CreateBlueprintInput)
     }
-    refetch()
+    invalidateQueries(['blueprints'])
   }
 
   const handleEdit = async (c: BlueprintCraftability) => {
@@ -88,7 +88,7 @@ export function WorkshopView() {
     if (deleteConfirm) {
       await blueprintsApi.delete(deleteConfirm.blueprint.id)
       setDeleteConfirm(null)
-      refetch()
+      invalidateQueries(['blueprints'])
     }
   }
 

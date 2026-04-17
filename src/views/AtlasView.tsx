@@ -2,14 +2,14 @@ import { useState, useMemo } from 'react'
 import { Globe, Plus, List, GitBranch } from 'lucide-react'
 import { Button, SearchInput, ConfirmDeleteModal } from '../components/ui'
 import { LocationCard, LocationModal, LocationTree, LocationDetailModal } from '../components/atlas'
-import { useLocations, useShipsAtLocations } from '../lib/db'
+import { useLocations, useShipsAtLocations, invalidateQueries } from '../lib/db'
 import { locationsApi } from '../lib/db/api'
 import type { Location, CreateLocationInput, UpdateLocationInput } from '../types/database'
 
 type ViewMode = 'grid' | 'tree'
 
 export function AtlasView() {
-  const { data: locations, loading, refetch } = useLocations()
+  const { data: locations, loading } = useLocations()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingLocation, setEditingLocation] = useState<Location | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -56,7 +56,7 @@ export function AtlasView() {
     } else {
       await locationsApi.create(data as CreateLocationInput)
     }
-    refetch()
+    invalidateQueries(['locations'])
   }
 
   const handleEdit = (location: Location) => {
@@ -72,13 +72,13 @@ export function AtlasView() {
     if (deleteConfirm) {
       await locationsApi.delete(deleteConfirm.id)
       setDeleteConfirm(null)
-      refetch()
+      invalidateQueries(['locations'])
     }
   }
 
   const handleToggleFavorite = async (location: Location) => {
     await locationsApi.update(location.id, { isFavorite: !location.isFavorite })
-    refetch()
+    invalidateQueries(['locations'])
   }
 
   const handleAddNew = () => {
@@ -256,7 +256,7 @@ export function AtlasView() {
           try {
             const updated = await locationsApi.incrementVisit(detailLocation.id)
             setDetailLocation(updated)
-            refetch()
+            invalidateQueries(['locations'])
           } catch (err) {
             console.error('Failed to record visit:', err)
           }

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { Gem, Plus } from 'lucide-react'
 import { Button, SearchInput, StatCard, ConfirmDeleteModal } from '../components/ui'
 import { InventoryFormModal, InventoryCard } from '../components/mining'
-import { useInventory, useShips, useLocations } from '../lib/db'
+import { useInventory, useShips, useLocations, invalidateQueries } from '../lib/db'
 import { inventoryApi } from '../lib/db/api'
 import { buildShipNameMap } from '../lib/format'
 import type {
@@ -14,7 +14,7 @@ import type {
 type CategoryFilter = 'all' | 'mineral' | 'gem' | 'component' | 'salvage' | 'other'
 
 export function MiningView() {
-  const { data: inventory, loading, refetch } = useInventory()
+  const { data: inventory, loading } = useInventory()
   const { data: ships } = useShips()
   const { data: locations } = useLocations()
 
@@ -82,7 +82,8 @@ export function MiningView() {
     } else {
       await inventoryApi.create(data as CreateInventoryItemInput)
     }
-    refetch()
+    invalidateQueries(['inventory'])
+    invalidateQueries(['blueprints', 'craftability'])
   }
 
   const handleEdit = (item: InventoryItem) => {
@@ -98,7 +99,8 @@ export function MiningView() {
   const handleAdjust = async (item: InventoryItem, delta: number) => {
     try {
       await inventoryApi.adjustQuantity(item.id, delta)
-      refetch()
+      invalidateQueries(['inventory'])
+      invalidateQueries(['blueprints', 'craftability'])
     } catch (error) {
       console.error('Failed to adjust quantity:', error)
     }
@@ -108,7 +110,8 @@ export function MiningView() {
     if (deleteConfirm) {
       await inventoryApi.delete(deleteConfirm.id)
       setDeleteConfirm(null)
-      refetch()
+      invalidateQueries(['inventory'])
+      invalidateQueries(['blueprints', 'craftability'])
     }
   }
 

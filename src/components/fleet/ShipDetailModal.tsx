@@ -27,7 +27,7 @@ export function ShipDetailModal({
   ship,
   currentLocation,
 }: ShipDetailModalProps) {
-  const { data: linkedScreenshots, refetch: refetchScreenshots } = useScreenshotsByShip(ship?.id ?? null);
+  const { data: linkedScreenshots } = useScreenshotsByShip(ship?.id ?? null);
 
   if (!ship) return null;
 
@@ -169,7 +169,6 @@ export function ShipDetailModal({
       <div className="mb-4">
         <LinkedScreenshots
           screenshots={linkedScreenshots || []}
-          onImport={() => refetchScreenshots()}
           linkData={{ shipId: ship.id }}
         />
       </div>

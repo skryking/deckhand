@@ -82,7 +82,7 @@ export function LocationDetailModal({
   parentName,
   shipsAtLocation,
 }: LocationDetailModalProps) {
-  const { data: linkedScreenshots, refetch: refetchScreenshots } = useScreenshotsByLocation(location?.id ?? '');
+  const { data: linkedScreenshots } = useScreenshotsByLocation(location?.id ?? '');
 
   if (!location) return null;
 
@@ -257,7 +257,6 @@ export function LocationDetailModal({
       <div className="mb-4">
         <LinkedScreenshots
           screenshots={linkedScreenshots || []}
-          onImport={() => refetchScreenshots()}
           linkData={{ locationId: location.id }}
         />
       </div>

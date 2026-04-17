@@ -43,7 +43,7 @@ export function JournalEntryModal({
   ships,
   locations,
 }: JournalEntryModalProps) {
-  const { data: linkedScreenshots, refetch: refetchScreenshots } = useScreenshotsByJournalEntry(entry?.id ?? null);
+  const { data: linkedScreenshots } = useScreenshotsByJournalEntry(entry?.id ?? null);
   const { formData, setFormData, loading, handleSubmit } = useEntityForm({
     entity: entry,
     isOpen,
@@ -203,7 +203,6 @@ export function JournalEntryModal({
           {entry && (
             <LinkedScreenshots
               screenshots={linkedScreenshots || []}
-              onImport={() => refetchScreenshots()}
               linkData={{ journalEntryId: entry.id }}
             />
           )}

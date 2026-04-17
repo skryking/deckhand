@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Image, Plus, X } from "lucide-react";
 import { screenshotsApi } from "../../lib/db/api";
+import { invalidateQueries } from "../../lib/db/queryCache";
 import { screenshotFilesApi } from "../../lib/screenshotFiles";
 import type { Screenshot, CreateScreenshotInput } from "../../types/database";
 
 interface LinkedScreenshotsProps {
   screenshots: Screenshot[];
-  onImport: (screenshot: Screenshot) => void;
   linkData: {
     shipId?: string | null;
     locationId?: string | null;
@@ -16,7 +16,6 @@ interface LinkedScreenshotsProps {
 
 export function LinkedScreenshots({
   screenshots,
-  onImport,
   linkData,
 }: LinkedScreenshotsProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -39,9 +38,9 @@ export function LinkedScreenshots({
           journalEntryId: linkData.journalEntryId ?? null,
           isFavorite: false,
         };
-        const created = await screenshotsApi.create(data);
-        onImport(created);
+        await screenshotsApi.create(data);
       }
+      invalidateQueries(["screenshots"]);
     } catch (error) {
       console.error("Failed to import screenshot:", error);
     }
@@ -54,7 +53,7 @@ export function LinkedScreenshots({
       if (linkData.locationId) update.locationId = null;
       if (linkData.journalEntryId) update.journalEntryId = null;
       await screenshotsApi.update(screenshot.id, update);
-      onImport(screenshot); // triggers refetch in parent
+      invalidateQueries(["screenshots"]);
     } catch (error) {
       console.error("Failed to unlink screenshot:", error);
     }

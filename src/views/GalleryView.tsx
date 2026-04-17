@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { Image, Upload, Star, X, Pencil, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button, SearchInput, StatCard, ConfirmDeleteModal } from '../components/ui'
 import { ScreenshotCard, ScreenshotModal } from '../components/gallery'
-import { useScreenshots, useShips, useLocations } from '../lib/db'
+import { useScreenshots, useShips, useLocations, invalidateQueries } from '../lib/db'
 import { screenshotsApi } from '../lib/db/api'
 import { screenshotFilesApi } from '../lib/screenshotFiles'
 import { buildShipNameMap } from '../lib/format'
@@ -15,7 +15,7 @@ import type {
 type GalleryFilter = 'all' | 'favorites'
 
 export function GalleryView() {
-  const { data: screenshots, loading, refetch } = useScreenshots()
+  const { data: screenshots, loading } = useScreenshots()
   const { data: ships } = useShips()
   const { data: locations } = useLocations()
 
@@ -96,7 +96,7 @@ export function GalleryView() {
         })
       }
 
-      refetch()
+      invalidateQueries(['screenshots'])
     } catch (error) {
       console.error('Failed to import screenshots:', error)
     }
@@ -108,7 +108,7 @@ export function GalleryView() {
     } else {
       await screenshotsApi.create(data as CreateScreenshotInput)
     }
-    refetch()
+    invalidateQueries(['screenshots'])
   }
 
   const handleEdit = (screenshot: Screenshot) => {
@@ -122,7 +122,7 @@ export function GalleryView() {
       await screenshotFilesApi.deleteFile(deleteConfirm.filePath)
       await screenshotsApi.delete(deleteConfirm.id)
       setDeleteConfirm(null)
-      refetch()
+      invalidateQueries(['screenshots'])
     }
   }
 

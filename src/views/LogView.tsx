@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { Globe, Ship, BookOpen, Plus, Star } from 'lucide-react'
 import { Button, SearchInput, EntryCard, ConfirmDeleteModal } from '../components/ui'
 import { JournalFilters, JournalEntryModal } from '../components/journal'
-import { useJournalEntries, useShips, useLocations } from '../lib/db'
+import { useJournalEntries, useShips, useLocations, invalidateQueries } from '../lib/db'
 import { journalApi } from '../lib/db/api'
 import { buildShipNameMap, formatDateTime } from '../lib/format'
 import type {
@@ -12,7 +12,7 @@ import type {
 } from '../types/database'
 
 export function LogView() {
-  const { data: entries, loading, refetch } = useJournalEntries()
+  const { data: entries, loading } = useJournalEntries()
   const { data: ships } = useShips()
   const { data: locations } = useLocations()
 
@@ -75,7 +75,7 @@ export function LogView() {
     } else {
       await journalApi.create(data as CreateJournalEntryInput)
     }
-    refetch()
+    invalidateQueries(['journal'])
   }
 
   const handleEdit = (entry: JournalEntry) => {
@@ -87,7 +87,7 @@ export function LogView() {
     if (deleteConfirm) {
       await journalApi.delete(deleteConfirm.id)
       setDeleteConfirm(null)
-      refetch()
+      invalidateQueries(['journal'])
     }
   }
 

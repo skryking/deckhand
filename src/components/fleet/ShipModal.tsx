@@ -194,9 +194,8 @@ export function ShipModal({ isOpen, onClose, onSave, ship }: ShipModalProps) {
                 }
                 className="sr-only peer"
               />
-              <div className="w-9 h-5 bg-panel border-subtle rounded-full peer peer-checked:bg-teal-dark peer-checked:border-teal-muted transition-all">
-                <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-text-muted rounded-full peer-checked:translate-x-4 peer-checked:bg-teal-bright transition-all" />
-              </div>
+              <div className="w-9 h-5 bg-panel border-subtle rounded-full peer-checked:bg-teal-dark peer-checked:border-teal-muted transition-all" />
+              <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-text-muted rounded-full peer-checked:translate-x-4 peer-checked:bg-teal-bright transition-all" />
             </label>
             <span className="text-sm text-text-secondary">
               {formData.isOwned ? "Owned" : "Wishlist"}

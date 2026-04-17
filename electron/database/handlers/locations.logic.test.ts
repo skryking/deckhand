@@ -52,6 +52,37 @@ describe('CRUD operations', () => {
     const loc = createLocation(db, { name: 'Port Olisar' });
     expect(() => updateLocation(db, loc.id, { parentId: 'bogus' })).toThrow('Location not found');
   });
+
+  it('rejects a two-node cycle (A becomes child of its own child)', () => {
+    const a = createLocation(db, { name: 'A' });
+    const b = createLocation(db, { name: 'B', parentId: a.id });
+    // B is already A's child; making A a child of B would close the loop.
+    expect(() => updateLocation(db, a.id, { parentId: b.id })).toThrow('cycle');
+  });
+
+  it('rejects a deeper cycle (ancestor becomes descendant)', () => {
+    const a = createLocation(db, { name: 'A' });
+    const b = createLocation(db, { name: 'B', parentId: a.id });
+    const c = createLocation(db, { name: 'C', parentId: b.id });
+    // A → B → C. Making A a child of C would cycle A → C → B → A.
+    expect(() => updateLocation(db, a.id, { parentId: c.id })).toThrow('cycle');
+  });
+
+  it('allows reparenting that does not create a cycle', () => {
+    const a = createLocation(db, { name: 'A' });
+    const b = createLocation(db, { name: 'B', parentId: a.id });
+    const c = createLocation(db, { name: 'C' }); // unrelated root
+    // Moving B under C is a valid reparent.
+    const updated = updateLocation(db, b.id, { parentId: c.id });
+    expect(updated.parentId).toBe(c.id);
+  });
+
+  it('allows clearing parentId (reparent to root)', () => {
+    const a = createLocation(db, { name: 'A' });
+    const b = createLocation(db, { name: 'B', parentId: a.id });
+    const updated = updateLocation(db, b.id, { parentId: null });
+    expect(updated.parentId).toBeNull();
+  });
 });
 
 describe('deleteLocation cascades', () => {

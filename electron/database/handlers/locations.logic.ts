@@ -21,9 +21,12 @@ export function createLocation(db: DB, data: typeof schema.locations.$inferInser
 }
 
 export function updateLocation(db: DB, id: string, data: Partial<typeof schema.locations.$inferInsert>) {
-  if (data.parentId !== undefined) {
+  if (data.parentId !== undefined && data.parentId !== null) {
     if (data.parentId === id) throw new Error('Location cannot be its own parent');
     validateFks(db, { parentId: data.parentId });
+    if (wouldCreateCycle(db, id, data.parentId)) {
+      throw new Error('Cannot set parentId: would create a cycle in the location hierarchy');
+    }
   }
   return db
     .update(schema.locations)
@@ -31,6 +34,26 @@ export function updateLocation(db: DB, id: string, data: Partial<typeof schema.l
     .where(eq(schema.locations.id, id))
     .returning()
     .get();
+}
+
+// Walks up the ancestor chain from newParentId. If the target `id` appears in
+// that chain, assigning it as parent would close a loop. Guards against a
+// pre-existing cycle in the DB by tracking visited nodes.
+function wouldCreateCycle(db: DB, id: string, newParentId: string): boolean {
+  const visited = new Set<string>();
+  let cursor: string | null = newParentId;
+  while (cursor) {
+    if (cursor === id) return true;
+    if (visited.has(cursor)) return true;
+    visited.add(cursor);
+    const row = db
+      .select({ parentId: schema.locations.parentId })
+      .from(schema.locations)
+      .where(eq(schema.locations.id, cursor))
+      .get();
+    cursor = row?.parentId ?? null;
+  }
+  return false;
 }
 
 export function deleteLocation(db: DB, id: string) {

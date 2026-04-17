@@ -13,6 +13,17 @@ import type {
 } from '../types/database'
 
 type CraftFilter = 'all' | 'craftable' | 'missing'
+type CategoryFilter = 'all' | 'armor' | 'component' | 'consumable' | 'weapon' | 'other' | 'uncategorized'
+
+const CATEGORY_FILTERS: { value: CategoryFilter; label: string }[] = [
+  { value: 'all', label: 'All Categories' },
+  { value: 'armor', label: 'Armor' },
+  { value: 'component', label: 'Component' },
+  { value: 'consumable', label: 'Consumable' },
+  { value: 'weapon', label: 'Weapon' },
+  { value: 'other', label: 'Other' },
+  { value: 'uncategorized', label: 'Uncategorized' },
+]
 
 export function WorkshopView() {
   const { data: craftability, loading } = useBlueprintCraftability()
@@ -22,6 +33,7 @@ export function WorkshopView() {
   const [editingBlueprint, setEditingBlueprint] = useState<(Blueprint & { ingredients: BlueprintIngredient[] }) | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [craftFilter, setCraftFilter] = useState<CraftFilter>('all')
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
   const [deleteConfirm, setDeleteConfirm] = useState<BlueprintCraftability | null>(null)
 
   const filteredBlueprints = useMemo(() => {
@@ -35,6 +47,14 @@ export function WorkshopView() {
       result = result.filter((c) => !c.canCraft)
     }
 
+    if (categoryFilter !== 'all') {
+      result = result.filter((c) =>
+        categoryFilter === 'uncategorized'
+          ? !c.blueprint.category
+          : c.blueprint.category === categoryFilter
+      )
+    }
+
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       result = result.filter(
@@ -46,7 +66,28 @@ export function WorkshopView() {
     }
 
     return result
-  }, [craftability, craftFilter, searchQuery])
+  }, [craftability, craftFilter, categoryFilter, searchQuery])
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<CategoryFilter, number> = {
+      all: 0,
+      armor: 0,
+      component: 0,
+      consumable: 0,
+      weapon: 0,
+      other: 0,
+      uncategorized: 0,
+    }
+    if (!craftability) return counts
+    counts.all = craftability.length
+    for (const c of craftability) {
+      const cat = c.blueprint.category
+      if (!cat) counts.uncategorized++
+      else if (cat in counts) counts[cat as CategoryFilter]++
+      else counts.other++
+    }
+    return counts
+  }, [craftability])
 
   const stats = useMemo(() => {
     if (!craftability) return { total: 0, craftable: 0, missing: 0, totalCraftable: 0 }
@@ -133,29 +174,49 @@ export function WorkshopView() {
         </div>
 
         {bpCount > 0 && (
-          <div className="flex gap-2 mb-6">
-            {craftFilters.map((filter) => {
-              const count =
-                filter.value === 'all'
-                  ? craftability?.length ?? 0
-                  : filter.value === 'craftable'
-                  ? craftability?.filter((c) => c.canCraft).length ?? 0
-                  : craftability?.filter((c) => !c.canCraft).length ?? 0
-              return (
+          <div className="space-y-2 mb-6">
+            <div className="flex gap-2 flex-wrap">
+              {craftFilters.map((filter) => {
+                const count =
+                  filter.value === 'all'
+                    ? craftability?.length ?? 0
+                    : filter.value === 'craftable'
+                    ? craftability?.filter((c) => c.canCraft).length ?? 0
+                    : craftability?.filter((c) => !c.canCraft).length ?? 0
+                return (
+                  <button
+                    key={filter.value}
+                    onClick={() => setCraftFilter(filter.value)}
+                    className={`
+                      px-3 py-1.5 rounded text-xs font-medium transition-colors
+                      ${craftFilter === filter.value
+                        ? 'bg-teal-dark text-teal-bright border border-teal-muted'
+                        : 'bg-panel border border-subtle text-text-secondary hover:text-text-primary'}
+                    `}
+                  >
+                    {filter.label} ({count})
+                  </button>
+                )
+              })}
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {CATEGORY_FILTERS.filter(
+                (f) => f.value === 'all' || categoryCounts[f.value] > 0
+              ).map((filter) => (
                 <button
                   key={filter.value}
-                  onClick={() => setCraftFilter(filter.value)}
+                  onClick={() => setCategoryFilter(filter.value)}
                   className={`
                     px-3 py-1.5 rounded text-xs font-medium transition-colors
-                    ${craftFilter === filter.value
+                    ${categoryFilter === filter.value
                       ? 'bg-teal-dark text-teal-bright border border-teal-muted'
                       : 'bg-panel border border-subtle text-text-secondary hover:text-text-primary'}
                   `}
                 >
-                  {filter.label} ({count})
+                  {filter.label} ({categoryCounts[filter.value]})
                 </button>
-              )
-            })}
+              ))}
+            </div>
           </div>
         )}
 
@@ -190,14 +251,14 @@ export function WorkshopView() {
               />
             ))}
 
-            {filteredBlueprints.length === 0 && (searchQuery || craftFilter !== 'all') && (
+            {filteredBlueprints.length === 0 && (searchQuery || craftFilter !== 'all' || categoryFilter !== 'all') && (
               <div className="text-center py-12 text-text-muted">
                 No blueprints match your{' '}
-                {searchQuery && craftFilter !== 'all'
-                  ? 'search and filter'
+                {searchQuery && (craftFilter !== 'all' || categoryFilter !== 'all')
+                  ? 'search and filters'
                   : searchQuery
                   ? 'search'
-                  : 'filter'}
+                  : 'filters'}
               </div>
             )}
           </div>

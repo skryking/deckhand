@@ -1,7 +1,7 @@
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { BookOpen, Ship, Globe, Wallet, Package, Target, Image, Clock, Play, Pause, Square, RotateCcw } from 'lucide-react'
 import { StatCard } from '../components/ui'
-import { useNavigation, useSession, useRefresh } from '../stores'
+import { useNavigation, useSession } from '../stores'
 import { useJournalCount, useShips, useLocations, useBalance, useJournalEntries, useTransactions, useMissions, useSessions } from '../lib/db/hooks'
 import { formatSessionTime } from '../lib/format'
 import type { JournalEntry, Transaction, Mission, Session } from '../types/database'
@@ -143,14 +143,7 @@ export function HomeView() {
   const { data: recentJournal } = useJournalEntries({ limit: 5 })
   const { data: recentTransactions } = useTransactions({ limit: 5 })
   const { data: recentMissions } = useMissions({ limit: 5 })
-  const { data: recentSessions, refetch: refetchSessions } = useSessions({ limit: 5 })
-  const sessionVersion = useRefresh((s) => s.sessionVersion)
-
-  useEffect(() => {
-    if (sessionVersion > 0) {
-      refetchSessions()
-    }
-  }, [sessionVersion, refetchSessions])
+  const { data: recentSessions } = useSessions({ limit: 5 })
 
   const activityItems = useMemo(
     () => toActivityItems(recentJournal, recentTransactions, recentMissions, recentSessions),

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { sessionsApi } from '../lib/db/api'
-import { useRefresh } from './navigation'
+import { invalidateQueries } from '../lib/db/queryCache'
 import type { Session } from '../types/database'
 
 interface SessionState {
@@ -78,7 +78,7 @@ export const useSession = create<SessionState>((set, get) => ({
         accumulatedSeconds: 0,
         segmentStart: null,
       })
-      useRefresh.getState().invalidateSessions()
+      invalidateQueries(['sessions'])
     } catch {
       set({ loading: false })
     }
@@ -121,7 +121,7 @@ export const useSession = create<SessionState>((set, get) => ({
         accumulatedSeconds: 0,
         segmentStart: Date.now(),
       })
-      useRefresh.getState().invalidateSessions()
+      invalidateQueries(['sessions'])
     } catch {
       set({ loading: false })
     }

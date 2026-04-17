@@ -2,9 +2,8 @@ import { useState, useMemo } from 'react'
 import { Wallet, Plus } from 'lucide-react'
 import { Button, SearchInput, StatCard, ConfirmDeleteModal } from '../components/ui'
 import { TransactionModal, TransactionCard, LedgerFilters } from '../components/ledger'
-import { useTransactions, useBalance, useShips, useLocations } from '../lib/db'
+import { useTransactions, useBalance, useShips, useLocations, invalidateQueries } from '../lib/db'
 import { transactionsApi } from '../lib/db/api'
-import { useRefresh } from '../stores'
 import { buildShipNameMap } from '../lib/format'
 import type {
   Transaction,
@@ -14,11 +13,10 @@ import type {
 
 export function LedgerView() {
   // Data hooks
-  const { data: transactions, loading, refetch } = useTransactions()
-  const { data: balance, refetch: refetchBalance } = useBalance()
+  const { data: transactions, loading } = useTransactions()
+  const { data: balance } = useBalance()
   const { data: ships } = useShips()
   const { data: locations } = useLocations()
-  const invalidateBalance = useRefresh((s) => s.invalidateBalance)
 
   // UI state
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -108,9 +106,8 @@ export function LedgerView() {
     } else {
       await transactionsApi.create(data as CreateTransactionInput)
     }
-    refetch()
-    refetchBalance()
-    invalidateBalance()
+    invalidateQueries(['transactions'])
+    invalidateQueries(['balance'])
   }
 
   const handleEdit = (transaction: Transaction) => {
@@ -127,9 +124,8 @@ export function LedgerView() {
     if (deleteConfirm) {
       await transactionsApi.delete(deleteConfirm.id)
       setDeleteConfirm(null)
-      refetch()
-      refetchBalance()
-      invalidateBalance()
+      invalidateQueries(['transactions'])
+      invalidateQueries(['balance'])
     }
   }
 

@@ -1,10 +1,10 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { Globe, Plus, List, GitBranch } from 'lucide-react'
 import { Button, SearchInput, ConfirmDeleteModal } from '../components/ui'
 import { LocationCard, LocationModal, LocationTree, LocationDetailModal } from '../components/atlas'
-import { useLocations } from '../lib/db'
+import { useLocations, useShipsAtLocations } from '../lib/db'
 import { locationsApi } from '../lib/db/api'
-import type { Location, CreateLocationInput, UpdateLocationInput, ShipAtLocation } from '../types/database'
+import type { Location, CreateLocationInput, UpdateLocationInput } from '../types/database'
 
 type ViewMode = 'grid' | 'tree'
 
@@ -16,30 +16,10 @@ export function AtlasView() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [deleteConfirm, setDeleteConfirm] = useState<Location | null>(null)
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
-  const [shipsAtLocations, setShipsAtLocations] = useState<Record<string, ShipAtLocation[]>>({})
+  const { data: shipsAtLocationsData } = useShipsAtLocations(locations)
+  const shipsAtLocations = shipsAtLocationsData ?? {}
   const [detailLocation, setDetailLocation] = useState<Location | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-
-  // Fetch ships at each location
-  useEffect(() => {
-    const fetchShipsAtLocations = async () => {
-      if (!locations || locations.length === 0) return
-
-      const shipsMap: Record<string, ShipAtLocation[]> = {}
-      await Promise.all(
-        locations.map(async (location) => {
-          try {
-            shipsMap[location.id] = await locationsApi.getShipsAtLocation(location.id)
-          } catch {
-            shipsMap[location.id] = []
-          }
-        })
-      )
-      setShipsAtLocations(shipsMap)
-    }
-
-    fetchShipsAtLocations()
-  }, [locations])
 
   const filteredLocations = useMemo(() => {
     if (!locations) return []

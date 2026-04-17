@@ -1,43 +1,21 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { Ship, Plus } from 'lucide-react'
 import { Button, SearchInput, ConfirmDeleteModal } from '../components/ui'
 import { ShipCard, ShipModal, ShipDetailModal } from '../components/fleet'
-import { useShips } from '../lib/db'
+import { useShips, useShipLocations, invalidateQueries } from '../lib/db'
 import { shipsApi } from '../lib/db/api'
-import { useRefresh } from '../stores'
-import type { Ship as ShipType, CreateShipInput, UpdateShipInput, ShipCurrentLocation } from '../types/database'
+
+import type { Ship as ShipType, CreateShipInput, UpdateShipInput } from '../types/database'
 
 export function FleetView() {
-  const { data: ships, loading, refetch } = useShips()
-  const invalidateBalance = useRefresh((s) => s.invalidateBalance)
+  const { data: ships, loading } = useShips()
+  const { data: shipLocations } = useShipLocations(ships)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingShip, setEditingShip] = useState<ShipType | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState<ShipType | null>(null)
-  const [shipLocations, setShipLocations] = useState<Record<string, ShipCurrentLocation | null>>({})
   const [detailShip, setDetailShip] = useState<ShipType | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-
-  // Fetch current locations for all ships
-  useEffect(() => {
-    const fetchLocations = async () => {
-      if (!ships || ships.length === 0) return
-
-      const locations: Record<string, ShipCurrentLocation | null> = {}
-      await Promise.all(
-        ships.map(async (ship) => {
-          try {
-            locations[ship.id] = await shipsApi.getCurrentLocation(ship.id)
-          } catch {
-            locations[ship.id] = null
-          }
-        })
-      )
-      setShipLocations(locations)
-    }
-
-    fetchLocations()
-  }, [ships])
 
   const filteredShips = useMemo(() => {
     if (!ships) return []
@@ -62,8 +40,9 @@ export function FleetView() {
     } else {
       await shipsApi.create(data as CreateShipInput)
     }
-    refetch()
-    invalidateBalance()
+    invalidateQueries(['ships'])
+    invalidateQueries(['balance'])
+    invalidateQueries(['transactions'])
   }
 
   const handleEdit = (ship: ShipType) => {
@@ -79,8 +58,9 @@ export function FleetView() {
     if (deleteConfirm) {
       await shipsApi.delete(deleteConfirm.id)
       setDeleteConfirm(null)
-      refetch()
-      invalidateBalance()
+      invalidateQueries(['ships'])
+      invalidateQueries(['balance'])
+      invalidateQueries(['transactions'])
     }
   }
 
@@ -156,7 +136,7 @@ export function FleetView() {
               <ShipCard
                 key={ship.id}
                 ship={ship}
-                currentLocation={shipLocations[ship.id]}
+                currentLocation={shipLocations?.[ship.id] ?? null}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onClick={handleCardClick}
@@ -179,7 +159,7 @@ export function FleetView() {
         }}
         onEdit={handleDetailEdit}
         ship={detailShip}
-        currentLocation={detailShip ? shipLocations[detailShip.id] : null}
+        currentLocation={detailShip ? shipLocations?.[detailShip.id] ?? null : null}
       />
 
       <ShipModal

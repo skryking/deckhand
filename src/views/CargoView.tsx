@@ -2,9 +2,8 @@ import { useState, useMemo } from 'react'
 import { Package, Plus } from 'lucide-react'
 import { Button, SearchInput, StatCard, ConfirmDeleteModal } from '../components/ui'
 import { CargoRunModal, CargoRunCard } from '../components/cargo'
-import { useCargoRuns, useShips, useLocations } from '../lib/db'
+import { useCargoRuns, useShips, useLocations, invalidateQueries } from '../lib/db'
 import { cargoApi } from '../lib/db/api'
-import { useRefresh } from '../stores'
 import { buildShipNameMap } from '../lib/format'
 import type {
   CargoRun,
@@ -15,10 +14,9 @@ import type {
 type StatusFilter = 'all' | 'in_progress' | 'completed' | 'failed'
 
 export function CargoView() {
-  const { data: cargoRuns, loading, refetch } = useCargoRuns()
+  const { data: cargoRuns, loading } = useCargoRuns()
   const { data: ships } = useShips()
   const { data: locations } = useLocations()
-  const invalidateBalance = useRefresh((s) => s.invalidateBalance)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingRun, setEditingRun] = useState<CargoRun | null>(null)
@@ -82,8 +80,9 @@ export function CargoView() {
     } else {
       await cargoApi.create(data as CreateCargoRunInput)
     }
-    refetch()
-    invalidateBalance()
+    invalidateQueries(['cargo'])
+    invalidateQueries(['transactions'])
+    invalidateQueries(['balance'])
   }
 
   const handleEdit = (run: CargoRun) => {
@@ -100,8 +99,9 @@ export function CargoView() {
     if (deleteConfirm) {
       await cargoApi.delete(deleteConfirm.id)
       setDeleteConfirm(null)
-      refetch()
-      invalidateBalance()
+      invalidateQueries(['cargo'])
+      invalidateQueries(['transactions'])
+      invalidateQueries(['balance'])
     }
   }
 

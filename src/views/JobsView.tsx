@@ -2,9 +2,8 @@ import { useState, useMemo } from 'react'
 import { Target, Plus } from 'lucide-react'
 import { Button, SearchInput, StatCard, ConfirmDeleteModal } from '../components/ui'
 import { MissionModal, MissionCard } from '../components/jobs'
-import { useMissions, useShips, useLocations } from '../lib/db'
+import { useMissions, useShips, useLocations, invalidateQueries } from '../lib/db'
 import { missionsApi } from '../lib/db/api'
-import { useRefresh } from '../stores'
 import { buildShipNameMap } from '../lib/format'
 import type {
   Mission,
@@ -15,10 +14,9 @@ import type {
 type StatusFilter = 'all' | 'active' | 'completed' | 'failed' | 'abandoned'
 
 export function JobsView() {
-  const { data: missions, loading, refetch } = useMissions()
+  const { data: missions, loading } = useMissions()
   const { data: ships } = useShips()
   const { data: locations } = useLocations()
-  const invalidateBalance = useRefresh((s) => s.invalidateBalance)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingMission, setEditingMission] = useState<Mission | null>(null)
@@ -89,8 +87,9 @@ export function JobsView() {
     } else {
       await missionsApi.create(data as CreateMissionInput)
     }
-    refetch()
-    invalidateBalance()
+    invalidateQueries(['missions'])
+    invalidateQueries(['transactions'])
+    invalidateQueries(['balance'])
   }
 
   const handleEdit = (mission: Mission) => {
@@ -107,8 +106,9 @@ export function JobsView() {
     if (deleteConfirm) {
       await missionsApi.delete(deleteConfirm.id)
       setDeleteConfirm(null)
-      refetch()
-      invalidateBalance()
+      invalidateQueries(['missions'])
+      invalidateQueries(['transactions'])
+      invalidateQueries(['balance'])
     }
   }
 

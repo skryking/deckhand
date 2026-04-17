@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Wallet, Plus } from 'lucide-react'
-import { Button, SearchInput, StatCard, Modal, ModalFooter } from '../components/ui'
+import { Button, SearchInput, StatCard, ConfirmDeleteModal } from '../components/ui'
 import { TransactionModal, TransactionCard, LedgerFilters } from '../components/ledger'
 import { useTransactions, useBalance, useShips, useLocations } from '../lib/db'
 import { transactionsApi } from '../lib/db/api'
@@ -272,29 +272,13 @@ export function LedgerView() {
         locations={locations || []}
       />
 
-      {/* Delete confirmation modal */}
-      <Modal
+      <ConfirmDeleteModal
         isOpen={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDelete}
         title="Delete Transaction?"
-        size="sm"
-      >
-        <p className="text-text-secondary mb-2">
-          Are you sure you want to delete this transaction? This action cannot be
-          undone.
-        </p>
-        <ModalFooter className="-mx-6 -mb-5 mt-5">
-          <Button variant="ghost" onClick={() => setDeleteConfirm(null)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={confirmDelete}
-            className="bg-danger hover:bg-danger/80"
-          >
-            Delete
-          </Button>
-        </ModalFooter>
-      </Modal>
+        message="Are you sure you want to delete this transaction? This action cannot be undone."
+      />
     </>
   )
 }

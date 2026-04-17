@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react'
 import { Image, Upload, Star, X, Pencil, ChevronLeft, ChevronRight } from 'lucide-react'
-import { Button, SearchInput, StatCard, Modal, ModalFooter } from '../components/ui'
+import { Button, SearchInput, StatCard, ConfirmDeleteModal } from '../components/ui'
 import { ScreenshotCard, ScreenshotModal } from '../components/gallery'
 import { useScreenshots, useShips, useLocations } from '../lib/db'
 import { screenshotsApi } from '../lib/db/api'
+import { screenshotFilesApi } from '../lib/screenshotFiles'
 import { buildShipNameMap } from '../lib/format'
 import type {
   Screenshot,
@@ -76,11 +77,7 @@ export function GalleryView() {
 
   const handleImport = async () => {
     try {
-      const result = await window.ipcRenderer.invoke('screenshots:selectFiles') as {
-        success: boolean
-        filePaths?: string[]
-        error?: string
-      }
+      const result = await screenshotFilesApi.selectFiles()
 
       if (!result.success || !result.filePaths) return
 
@@ -122,7 +119,7 @@ export function GalleryView() {
   const confirmDelete = async () => {
     if (deleteConfirm) {
       // Delete the copied file from the app data directory
-      await window.ipcRenderer.invoke('screenshots:deleteFile', deleteConfirm.filePath)
+      await screenshotFilesApi.deleteFile(deleteConfirm.filePath)
       await screenshotsApi.delete(deleteConfirm.id)
       setDeleteConfirm(null)
       refetch()
@@ -326,28 +323,13 @@ export function GalleryView() {
         locations={locations || []}
       />
 
-      {/* Delete confirmation modal */}
-      <Modal
+      <ConfirmDeleteModal
         isOpen={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDelete}
         title="Delete Screenshot?"
-        size="sm"
-      >
-        <p className="text-text-secondary mb-2">
-          Are you sure you want to delete this screenshot? This action cannot be undone.
-        </p>
-        <ModalFooter className="-mx-6 -mb-5 mt-5">
-          <Button variant="ghost" onClick={() => setDeleteConfirm(null)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={confirmDelete}
-            className="bg-danger hover:bg-danger/80"
-          >
-            Delete
-          </Button>
-        </ModalFooter>
-      </Modal>
+        message="Are you sure you want to delete this screenshot? This action cannot be undone."
+      />
     </>
   )
 }

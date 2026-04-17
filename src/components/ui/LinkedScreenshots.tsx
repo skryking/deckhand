@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Image, Plus, X } from "lucide-react";
 import { screenshotsApi } from "../../lib/db/api";
+import { screenshotFilesApi } from "../../lib/screenshotFiles";
 import type { Screenshot, CreateScreenshotInput } from "../../types/database";
 
 interface LinkedScreenshotsProps {
@@ -22,13 +23,7 @@ export function LinkedScreenshots({
 
   const handleImport = async () => {
     try {
-      const result = (await window.ipcRenderer.invoke(
-        "screenshots:selectFiles"
-      )) as {
-        success: boolean;
-        filePaths?: string[];
-        error?: string;
-      };
+      const result = await screenshotFilesApi.selectFiles();
 
       if (!result.success || !result.filePaths) return;
 

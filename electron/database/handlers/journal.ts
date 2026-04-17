@@ -3,6 +3,7 @@ import { eq, desc, count } from 'drizzle-orm';
 import { getDatabase, schema } from '../index';
 import type { DbResponse, QueryOptions } from '../../../src/types/database';
 import { validateFks } from './fk-validation';
+import { validateJournalEntryInput } from './validation';
 
 export function registerJournalHandlers(): void {
   // Get all journal entries
@@ -30,6 +31,7 @@ export function registerJournalHandlers(): void {
   ipcMain.handle('db:journal:create', async (_, data: typeof schema.journalEntries.$inferInsert): Promise<DbResponse> => {
     try {
       const db = getDatabase();
+      validateJournalEntryInput(data as unknown as Record<string, unknown>);
       validateFks(db, { shipId: data.shipId, locationId: data.locationId });
       const result = db.insert(schema.journalEntries).values(data).returning().get();
       return { success: true, data: result };
@@ -43,6 +45,7 @@ export function registerJournalHandlers(): void {
   ipcMain.handle('db:journal:update', async (_, id: string, data: Partial<typeof schema.journalEntries.$inferInsert>): Promise<DbResponse> => {
     try {
       const db = getDatabase();
+      validateJournalEntryInput(data as unknown as Record<string, unknown>, true);
       validateFks(db, { shipId: data.shipId, locationId: data.locationId });
       const result = db
         .update(schema.journalEntries)

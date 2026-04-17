@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Package, Plus } from 'lucide-react'
-import { Button, SearchInput, StatCard, Modal, ModalFooter } from '../components/ui'
+import { Button, SearchInput, StatCard, ConfirmDeleteModal } from '../components/ui'
 import { CargoRunModal, CargoRunCard } from '../components/cargo'
 import { useCargoRuns, useShips, useLocations } from '../lib/db'
 import { cargoApi } from '../lib/db/api'
@@ -239,37 +239,26 @@ export function CargoView() {
         locations={locations || []}
       />
 
-      {/* Delete confirmation modal */}
-      <Modal
+      <ConfirmDeleteModal
         isOpen={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDelete}
         title="Delete Cargo Run?"
-        size="sm"
-      >
-        <p className="text-text-secondary mb-2">
-          Are you sure you want to delete this cargo run
-          {deleteConfirm && (
-            <>
-              {' '}for{' '}
-              <span className="text-text-primary font-medium">
-                {deleteConfirm.commodity}
-              </span>
-            </>
-          )}
-          ? This action cannot be undone.
-        </p>
-        <ModalFooter className="-mx-6 -mb-5 mt-5">
-          <Button variant="ghost" onClick={() => setDeleteConfirm(null)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={confirmDelete}
-            className="bg-danger hover:bg-danger/80"
-          >
-            Delete
-          </Button>
-        </ModalFooter>
-      </Modal>
+        message={
+          <>
+            Are you sure you want to delete this cargo run
+            {deleteConfirm && (
+              <>
+                {' '}for{' '}
+                <span className="text-text-primary font-medium">
+                  {deleteConfirm.commodity}
+                </span>
+              </>
+            )}
+            ? This action cannot be undone.
+          </>
+        }
+      />
     </>
   )
 }

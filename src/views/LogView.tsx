@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Globe, Ship, BookOpen, Plus, Star } from 'lucide-react'
-import { Button, SearchInput, EntryCard } from '../components/ui'
+import { Button, SearchInput, EntryCard, ConfirmDeleteModal } from '../components/ui'
 import { JournalFilters, JournalEntryModal } from '../components/journal'
 import { useJournalEntries, useShips, useLocations } from '../lib/db'
 import { journalApi } from '../lib/db/api'
@@ -235,38 +235,23 @@ export function LogView() {
         locations={locations || []}
       />
 
-      {/* Delete confirmation modal */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-void/80 backdrop-blur-sm"
-            onClick={() => setDeleteConfirm(null)}
-          />
-          <div className="relative bg-hull border-subtle rounded-lg shadow-2xl p-6 max-w-md mx-4">
-            <h3 className="font-display text-lg font-semibold text-text-primary mb-2">
-              Delete Entry?
-            </h3>
-            <p className="text-text-secondary mb-6">
+      <ConfirmDeleteModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDelete}
+        title="Delete Entry?"
+        message={
+          deleteConfirm && (
+            <>
               Are you sure you want to delete{' '}
               <span className="text-text-primary font-medium">
                 {deleteConfirm.title || 'this entry'}
               </span>
               ? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button variant="ghost" onClick={() => setDeleteConfirm(null)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={confirmDelete}
-                className="bg-danger hover:bg-danger/80"
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+            </>
+          )
+        }
+      />
     </>
   )
 }

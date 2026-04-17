@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Globe, Plus, List, GitBranch } from 'lucide-react'
-import { Button, SearchInput } from '../components/ui'
+import { Button, SearchInput, ConfirmDeleteModal } from '../components/ui'
 import { LocationCard, LocationModal, LocationTree, LocationDetailModal } from '../components/atlas'
 import { useLocations } from '../lib/db'
 import { locationsApi } from '../lib/db/api'
@@ -297,38 +297,23 @@ export function AtlasView() {
         locations={locations || []}
       />
 
-      {/* Delete confirmation modal */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-void/80 backdrop-blur-sm"
-            onClick={() => setDeleteConfirm(null)}
-          />
-          <div className="relative bg-hull border-subtle rounded-lg shadow-2xl p-6 max-w-md mx-4">
-            <h3 className="font-display text-lg font-semibold text-text-primary mb-2">
-              Delete Location?
-            </h3>
-            <p className="text-text-secondary mb-6">
+      <ConfirmDeleteModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDelete}
+        title="Delete Location?"
+        message={
+          deleteConfirm && (
+            <>
               Are you sure you want to delete{' '}
               <span className="text-text-primary font-medium">
                 {deleteConfirm.name}
               </span>
               ? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button variant="ghost" onClick={() => setDeleteConfirm(null)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={confirmDelete}
-                className="bg-danger hover:bg-danger/80"
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+            </>
+          )
+        }
+      />
     </>
   )
 }

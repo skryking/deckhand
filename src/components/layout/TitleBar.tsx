@@ -1,18 +1,8 @@
 import { Minus, Square, X } from "lucide-react";
 import { Logo } from "../Logo";
+import { windowApi } from "../../lib/window";
 
 export function TitleBar() {
-  const handleMinimize = () => {
-    window.ipcRenderer?.invoke("window-minimize");
-  };
-
-  const handleMaximize = () => {
-    window.ipcRenderer?.invoke("window-maximize");
-  };
-
-  const handleClose = () => {
-    window.ipcRenderer?.invoke("window-close");
-  };
 
   return (
     <header className="h-10 bg-gradient-to-b from-panel to-hull border-b border-subtle flex items-center justify-between px-4 app-drag">
@@ -28,21 +18,21 @@ export function TitleBar() {
 
       <div className="flex gap-3 app-no-drag">
         <button
-          onClick={handleMinimize}
+          onClick={windowApi.minimize}
           className="w-3 h-3 rounded-sm bg-amber-primary opacity-70 hover:opacity-100 hover:scale-110 transition-all flex items-center justify-center group"
           aria-label="Minimize"
         >
           <Minus className="w-2 h-2 text-void opacity-0 group-hover:opacity-100" />
         </button>
         <button
-          onClick={handleMaximize}
+          onClick={windowApi.maximize}
           className="w-3 h-3 rounded-sm bg-teal-primary opacity-70 hover:opacity-100 hover:scale-110 transition-all flex items-center justify-center group"
           aria-label="Maximize"
         >
           <Square className="w-1.5 h-1.5 text-void opacity-0 group-hover:opacity-100" />
         </button>
         <button
-          onClick={handleClose}
+          onClick={windowApi.close}
           className="w-3 h-3 rounded-sm bg-danger opacity-70 hover:opacity-100 hover:scale-110 transition-all flex items-center justify-center group"
           aria-label="Close"
         >

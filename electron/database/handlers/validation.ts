@@ -137,3 +137,25 @@ export function validateMissionInput(data: Record<string, unknown>, isUpdate = f
     requireNonNegative(data.reward, 'reward');
   }
 }
+
+/**
+ * Validates a journal entry create/update payload.
+ */
+export function validateJournalEntryInput(data: Record<string, unknown>, isUpdate = false) {
+  if (!isUpdate) {
+    requireString(data.content, 'content');
+  } else {
+    if (data.content !== undefined) requireString(data.content, 'content');
+  }
+}
+
+/**
+ * Validates a screenshot create/update payload.
+ */
+export function validateScreenshotInput(data: Record<string, unknown>, isUpdate = false) {
+  if (!isUpdate) {
+    requireString(data.filePath, 'filePath');
+  } else {
+    if (data.filePath !== undefined) requireString(data.filePath, 'filePath');
+  }
+}

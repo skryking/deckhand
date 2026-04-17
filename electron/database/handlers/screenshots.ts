@@ -3,6 +3,7 @@ import { eq, desc } from 'drizzle-orm';
 import { getDatabase, schema } from '../index';
 import type { DbResponse, QueryOptions } from '../../../src/types/database';
 import { validateFks } from './fk-validation';
+import { validateScreenshotInput } from './validation';
 
 export function registerScreenshotHandlers(): void {
   // Get all screenshots
@@ -81,6 +82,7 @@ export function registerScreenshotHandlers(): void {
   ipcMain.handle('db:screenshots:create', async (_, data: typeof schema.screenshots.$inferInsert): Promise<DbResponse> => {
     try {
       const db = getDatabase();
+      validateScreenshotInput(data as unknown as Record<string, unknown>);
       validateFks(db, { shipId: data.shipId, locationId: data.locationId, journalEntryId: data.journalEntryId });
       const result = db.insert(schema.screenshots).values(data).returning().get();
       return { success: true, data: result };
@@ -94,6 +96,7 @@ export function registerScreenshotHandlers(): void {
   ipcMain.handle('db:screenshots:update', async (_, id: string, data: Partial<typeof schema.screenshots.$inferInsert>): Promise<DbResponse> => {
     try {
       const db = getDatabase();
+      validateScreenshotInput(data as unknown as Record<string, unknown>, true);
       validateFks(db, { shipId: data.shipId, locationId: data.locationId, journalEntryId: data.journalEntryId });
       const result = db
         .update(schema.screenshots)

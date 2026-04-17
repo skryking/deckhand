@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Gem, Plus } from 'lucide-react'
-import { Button, SearchInput, StatCard, Modal, ModalFooter } from '../components/ui'
+import { Button, SearchInput, StatCard, ConfirmDeleteModal } from '../components/ui'
 import { InventoryFormModal, InventoryCard } from '../components/mining'
 import { useInventory, useShips, useLocations } from '../lib/db'
 import { inventoryApi } from '../lib/db/api'
@@ -245,33 +245,23 @@ export function MiningView() {
         locations={locations || []}
       />
 
-      <Modal
+      <ConfirmDeleteModal
         isOpen={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDelete}
         title="Delete Inventory Item?"
-        size="sm"
-      >
-        <p className="text-text-secondary mb-2">
-          Are you sure you want to delete{' '}
-          {deleteConfirm && (
-            <span className="text-text-primary font-medium">
-              {deleteConfirm.materialName} (Q:{deleteConfirm.quality})
-            </span>
-          )}
-          ? This action cannot be undone.
-        </p>
-        <ModalFooter className="-mx-6 -mb-5 mt-5">
-          <Button variant="ghost" onClick={() => setDeleteConfirm(null)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={confirmDelete}
-            className="bg-danger hover:bg-danger/80"
-          >
-            Delete
-          </Button>
-        </ModalFooter>
-      </Modal>
+        message={
+          <>
+            Are you sure you want to delete{' '}
+            {deleteConfirm && (
+              <span className="text-text-primary font-medium">
+                {deleteConfirm.materialName} (Q:{deleteConfirm.quality})
+              </span>
+            )}
+            ? This action cannot be undone.
+          </>
+        }
+      />
     </>
   )
 }

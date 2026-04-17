@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { FolderOpen } from "lucide-react";
 import { Modal, ModalFooter, Button, Input, Textarea, Select } from "../ui";
+import { screenshotFilesApi } from "../../lib/screenshotFiles";
 import type {
   Screenshot,
   CreateScreenshotInput,
@@ -135,7 +136,7 @@ export function ScreenshotModal({
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => window.ipcRenderer.invoke('screenshots:openFolder', formData.filePath)}
+                  onClick={() => screenshotFilesApi.openFolder(formData.filePath)}
                   title="Open containing folder"
                   className="shrink-0"
                 >

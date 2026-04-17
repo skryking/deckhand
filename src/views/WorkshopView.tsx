@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Hammer, Plus } from 'lucide-react'
-import { Button, SearchInput, StatCard, Modal, ModalFooter } from '../components/ui'
+import { Button, SearchInput, StatCard, ConfirmDeleteModal } from '../components/ui'
 import { BlueprintFormModal, BlueprintCard } from '../components/workshop'
 import { useBlueprintCraftability, useLocations } from '../lib/db'
 import { blueprintsApi } from '../lib/db/api'
@@ -221,33 +221,23 @@ export function WorkshopView() {
         locations={locations || []}
       />
 
-      <Modal
+      <ConfirmDeleteModal
         isOpen={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDelete}
         title="Delete Blueprint?"
-        size="sm"
-      >
-        <p className="text-text-secondary mb-2">
-          Are you sure you want to delete{' '}
-          {deleteConfirm && (
-            <span className="text-text-primary font-medium">
-              {deleteConfirm.blueprint.name}
-            </span>
-          )}
-          ? This will also remove all ingredient data. This action cannot be undone.
-        </p>
-        <ModalFooter className="-mx-6 -mb-5 mt-5">
-          <Button variant="ghost" onClick={() => setDeleteConfirm(null)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={confirmDelete}
-            className="bg-danger hover:bg-danger/80"
-          >
-            Delete
-          </Button>
-        </ModalFooter>
-      </Modal>
+        message={
+          <>
+            Are you sure you want to delete{' '}
+            {deleteConfirm && (
+              <span className="text-text-primary font-medium">
+                {deleteConfirm.blueprint.name}
+              </span>
+            )}
+            ? This will also remove all ingredient data. This action cannot be undone.
+          </>
+        }
+      />
     </>
   )
 }

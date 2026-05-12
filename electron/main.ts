@@ -135,6 +135,9 @@ ipcMain.handle('data:export', async () => {
         missions: db.select().from(schema.missions).all(),
         screenshots: db.select().from(schema.screenshots).all(),
         sessions: db.select().from(schema.sessions).all(),
+        inventory: db.select().from(schema.inventory).all(),
+        blueprints: db.select().from(schema.blueprints).all(),
+        blueprintIngredients: db.select().from(schema.blueprintIngredients).all(),
       }
     }
 
@@ -195,6 +198,9 @@ ipcMain.handle('data:import', async () => {
       tx.delete(schema.cargoRuns).run()
       tx.delete(schema.transactions).run()
       tx.delete(schema.journalEntries).run()
+      tx.delete(schema.blueprintIngredients).run()
+      tx.delete(schema.blueprints).run()
+      tx.delete(schema.inventory).run()
       tx.delete(schema.locations).run()
       tx.delete(schema.ships).run()
 
@@ -239,6 +245,21 @@ ipcMain.handle('data:import', async () => {
           tx.insert(schema.sessions).values(session).run()
         }
       }
+      if (data.inventory?.length) {
+        for (const item of data.inventory) {
+          tx.insert(schema.inventory).values(item).run()
+        }
+      }
+      if (data.blueprints?.length) {
+        for (const blueprint of data.blueprints) {
+          tx.insert(schema.blueprints).values(blueprint).run()
+        }
+      }
+      if (data.blueprintIngredients?.length) {
+        for (const ingredient of data.blueprintIngredients) {
+          tx.insert(schema.blueprintIngredients).values(ingredient).run()
+        }
+      }
     })
 
     return { success: true, importedAt: importData.exportedAt }
@@ -260,6 +281,9 @@ ipcMain.handle('data:clear', async () => {
       tx.delete(schema.cargoRuns).run()
       tx.delete(schema.transactions).run()
       tx.delete(schema.journalEntries).run()
+      tx.delete(schema.blueprintIngredients).run()
+      tx.delete(schema.blueprints).run()
+      tx.delete(schema.inventory).run()
       tx.delete(schema.locations).run()
       tx.delete(schema.ships).run()
     })

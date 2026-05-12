@@ -108,12 +108,20 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   'db:sessions:end',
   'db:sessions:update',
   'db:sessions:delete',
+  // Log watcher
+  'logwatcher:getState',
+  'logwatcher:setEnabled',
+  'logwatcher:setLogPath',
+  'logwatcher:dismiss',
+  'logwatcher:resolve',
+  'logwatcher:clearAll',
 ])
 
 const ALLOWED_SEND_CHANNELS = new Set<string>([])
 
 const ALLOWED_ON_CHANNELS = new Set([
   'main-process-message',
+  'logwatcher:update',
 ])
 
 contextBridge.exposeInMainWorld('ipcRenderer', {

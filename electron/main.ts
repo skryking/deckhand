@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm'
 import { initializeDatabase, closeDatabase, getDbPath, getDatabase } from './database'
 import { registerDatabaseHandlers } from './database/handlers'
 import { schema } from './database'
+import { registerLogWatcherHandlers } from './logwatcher'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -420,6 +421,7 @@ app.whenReady().then(() => {
   try {
     initializeDatabase()
     registerDatabaseHandlers()
+    registerLogWatcherHandlers()
     migrateScreenshotsToAppData()
     console.log('[Main] Database ready')
   } catch (error) {

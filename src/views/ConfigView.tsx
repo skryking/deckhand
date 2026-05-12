@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react'
 import { Button } from '../components/ui'
+import { LogWatcherPanel } from '../components/config'
 
 export function ConfigView() {
   const [dbPath, setDbPath] = useState<string>('%APPDATA%/deckhand/deckhand.db')
@@ -196,6 +197,8 @@ export function ConfigView() {
               </div>
             </div>
           </section>
+
+          <LogWatcherPanel />
 
           {/* About Section */}
           <section className="mb-8">

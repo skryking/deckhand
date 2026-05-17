@@ -103,6 +103,21 @@ export function AtlasView() {
     }
   }
 
+  const handleRecordVisit = async (location: Location) => {
+    try {
+      const updated = await locationsApi.incrementVisit(location.id)
+      if (detailLocation?.id === updated.id) {
+        setDetailLocation(updated)
+      }
+      if (selectedLocation?.id === updated.id) {
+        setSelectedLocation(updated)
+      }
+      invalidateQueries(['locations'])
+    } catch (err) {
+      console.error('Failed to record visit:', err)
+    }
+  }
+
   const locationCount = locations?.length ?? 0
 
   return (
@@ -199,6 +214,7 @@ export function AtlasView() {
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onToggleFavorite={handleToggleFavorite}
+                    onRecordVisit={handleRecordVisit}
                   />
 
                   {selectedLocation.notes && (
@@ -231,6 +247,7 @@ export function AtlasView() {
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onToggleFavorite={handleToggleFavorite}
+                  onRecordVisit={handleRecordVisit}
                   onClick={handleCardClick}
                 />
               ))}
@@ -251,15 +268,8 @@ export function AtlasView() {
           setDetailLocation(null)
         }}
         onEdit={handleDetailEdit}
-        onRecordVisit={async () => {
-          if (!detailLocation) return
-          try {
-            const updated = await locationsApi.incrementVisit(detailLocation.id)
-            setDetailLocation(updated)
-            invalidateQueries(['locations'])
-          } catch (err) {
-            console.error('Failed to record visit:', err)
-          }
+        onRecordVisit={() => {
+          if (detailLocation) handleRecordVisit(detailLocation)
         }}
         location={detailLocation}
         parentName={detailLocation ? parentNames[detailLocation.id] : undefined}

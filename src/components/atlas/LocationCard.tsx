@@ -21,6 +21,7 @@ import {
   Skull,
   ExternalLink,
   Ship,
+  MapPinPlus,
 } from "lucide-react";
 import type { Location, ShipAtLocation } from "../../types/database";
 
@@ -31,6 +32,7 @@ interface LocationCardProps {
   onEdit: (location: Location) => void;
   onDelete: (location: Location) => void;
   onToggleFavorite: (location: Location) => void;
+  onRecordVisit?: (location: Location) => void;
   onClick?: (location: Location) => void;
 }
 
@@ -86,6 +88,7 @@ export function LocationCard({
   onEdit,
   onDelete,
   onToggleFavorite,
+  onRecordVisit,
   onClick,
 }: LocationCardProps) {
   const [showMenu, setShowMenu] = useState(false);
@@ -224,15 +227,32 @@ export function LocationCard({
 
       {/* Meta info */}
       <div className="flex flex-col gap-1.5 text-xs text-text-muted">
-        {/* Visit count */}
-        {location.visitCount && location.visitCount > 0 && (
-          <div className="flex items-center gap-1.5">
-            <Eye className="w-3.5 h-3.5" />
-            <span>
-              {location.visitCount} {location.visitCount === 1 ? "visit" : "visits"}
-            </span>
-          </div>
-        )}
+        {/* Visit count + record visit button */}
+        <div className="flex items-center justify-between gap-2">
+          {location.visitCount && location.visitCount > 0 ? (
+            <div className="flex items-center gap-1.5">
+              <Eye className="w-3.5 h-3.5" />
+              <span>
+                {location.visitCount} {location.visitCount === 1 ? "visit" : "visits"}
+              </span>
+            </div>
+          ) : (
+            <span className="text-text-muted/70">Not yet visited</span>
+          )}
+          {onRecordVisit && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRecordVisit(location);
+              }}
+              title="Record a visit"
+              className="flex items-center gap-1 px-2 py-1 text-[11px] text-teal-primary hover:text-teal-bright hover:bg-teal-dark/30 rounded transition-colors opacity-0 group-hover:opacity-100"
+            >
+              <MapPinPlus className="w-3.5 h-3.5" />
+              <span>Visit</span>
+            </button>
+          )}
+        </div>
         {/* Wiki link */}
         {location.wikiUrl && (
           <a
